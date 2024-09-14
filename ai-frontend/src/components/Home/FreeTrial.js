@@ -12,7 +12,7 @@ export default function FreeTrial() {
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
             Boost your productivity with Masync AI Content Generator. Start
-            using our app today.
+            using our app
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link
