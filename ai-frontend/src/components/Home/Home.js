@@ -40,9 +40,7 @@ export default function Home() {
                 Masync AI Content 
               </h1>
               <p className="mt-6 text-lg leading-8 text-gray-300">
-                content generator that uses AI to generate content
-                for you. It is a tool that helps you generate content for your
-                blog, website, or social .
+                AI Alt Text Generator.
               </p>
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link
