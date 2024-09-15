@@ -13,7 +13,7 @@ import FreePlanSignup from "./components/StripePayment/FreePlanSignup";
 import CheckoutForm from "./components/StripePayment/CheckoutForm";
 import PaymentSuccess from "./components/StripePayment/PaymentSuccess";
 import ContentGenerationHistory from "./components/ContentGeneration/ContentHistory";
-import AppFeatures from "./components/Features/Features";
+import AppFeatures from "./components/Support/Features";
 import AboutUs from "./components/About/About";
 
 export default function App() {
