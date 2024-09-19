@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
@@ -52,12 +52,28 @@ const Login = () => {
       login();
     }
   }, [mutation.isSuccess]);
+  // State for remember me checkbox
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Remove the Google API script loading effect
+  // useEffect(() => {
+  //   const script = document.createElement("script");
+  //   script.src = "https://apis.google.com/js/platform.js";
+  //   script.async = true;
+  //   script.defer = true;
+  //   document.body.appendChild(script);
+  
+  //   return () => {
+  //     document.body.removeChild(script); // Clean up the script on unmount
+  //   };
+  // }, []);
+
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 m-4">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+        {/* <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
           Login to Your Account
-        </h2>
+        </h2> */}
         {/* display loading */}
         {mutation.isPending && (
           <StatusMessage type="loading" message="Loading..." />
@@ -73,7 +89,20 @@ const Login = () => {
         {mutation.isSuccess && (
           <StatusMessage type="success" message="Login success" />
         )}
-        {/* Form for login */}
+        {/* Text Above Login Card */}
+        <div className="text-center mb-5">
+          <h2 className="text-2xl font-bold">Sign in to your account</h2>
+          <p className="text-base text-black">
+            or <a href="/Register" className="underline text-indigo-600">sign up for a free trial account</a>
+          </p>
+        </div>
+        {/* OR Divider */}
+        <div className="flex items-center justify-center my-4">
+          <hr className="w-1/3 border-gray-300" />
+          <span className="mx-2 text-gray-500">OR</span>
+          <hr className="w-1/3 border-gray-300" />
+        </div>
+        {/* Login Form */}
         <form onSubmit={formik.handleSubmit} className="space-y-6">
           {/* Email input field */}
           <div>
@@ -115,14 +144,22 @@ const Login = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                to="/register"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Don't have an account? Register
-              </Link>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                name="rememberMe"
+                checked={rememberMe}
+                onChange={() => setRememberMe(!rememberMe)}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <label htmlFor="rememberMe" className="ml-2 block text-sm text-black">
+                Remember me
+              </label>
             </div>
+            <a href="/forgot-password" className="text-sm text-indigo-600 hover:underline">
+              Forgot your password?
+            </a>
           </div>
 
           {/* Submit button */}

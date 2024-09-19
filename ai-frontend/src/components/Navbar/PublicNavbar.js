@@ -5,7 +5,7 @@ import { FaCreativeCommonsShare } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "Support", href: "/support" },
+  { name: "Support", href: "/Features" },
   { name: "Pricing", href: "/plans" },
   { name: "About", href: "/about" },
 ];

@@ -13,7 +13,8 @@ const validationSchema = Yup.object({
     .email("Enter a valid email")
     .required("Email is required"),
   password: Yup.string().required("Password is required"),
-  username: Yup.string().required("Username is required"),
+  firstName: Yup.string().required("First name is required"), // Validation for first name
+  lastName: Yup.string().required("Last name is required"),   // Validation for last name
 });
 
 const Registration = () => {
@@ -33,9 +34,21 @@ const Registration = () => {
     initialValues: {
       email: "",
       password: "",
-      username: "",
+      confirmPassword: "", // Added confirmPassword
+      firstName: "", // Changed from username to firstName
+      lastName: "",  // Added lastName
     },
-    validationSchema: validationSchema,
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email("Enter a valid email")
+        .required("Email is required"),
+      password: Yup.string().required("Password is required"),
+      confirmPassword: Yup.string()
+        .oneOf([Yup.ref('password'), null], "Passwords must match") // Validation for password confirmation
+        .required("Password confirmation is required"),
+      firstName: Yup.string().required("First name is required"),
+      lastName: Yup.string().required("Last name is required"),
+    }),
     onSubmit: (values) => {
       // Here, handle the form submission
       console.log("Form values", values);
@@ -58,7 +71,7 @@ const Registration = () => {
           Create an Account
         </h2>
         <p className="text-center text-gray-600 mb-4">
-          Create an account to get free access for 3 days. No credit card
+          Create an account to get 5 free images to AltText conversion. No credit card
           required.
         </p>
         {/* display loading */}
@@ -77,23 +90,43 @@ const Registration = () => {
           <StatusMessage type="success" message="Registration success" />
         )}
         <form onSubmit={formik.handleSubmit} className="space-y-6">
-          {/* Username input field */}
+          {/* First Name input field */}
           <div>
             <label
-              htmlFor="username"
+              htmlFor="firstName"
               className="text-sm font-medium text-gray-700 block mb-2"
             >
-              Username
+              First Name
             </label>
             <input
               type="text"
-              id="username"
-              {...formik.getFieldProps("username")}
+              id="firstName"
+              {...formik.getFieldProps("firstName")}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500"
-              placeholder="John Doe"
+              placeholder="John"
             />
-            {formik.touched.username && formik.errors.username && (
-              <div className="text-red-500 mt-1">{formik.errors.username}</div>
+            {formik.touched.firstName && formik.errors.firstName && (
+              <div className="text-red-500 mt-1">{formik.errors.firstName}</div>
+            )}
+          </div>
+
+          {/* Last Name input field */}
+          <div>
+            <label
+              htmlFor="lastName"
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              {...formik.getFieldProps("lastName")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+              placeholder="Doe"
+            />
+            {formik.touched.lastName && formik.errors.lastName && (
+              <div className="text-red-500 mt-1">{formik.errors.lastName}</div>
             )}
           </div>
 
@@ -136,6 +169,25 @@ const Registration = () => {
             )}
           </div>
 
+          {/* Password Confirmation input field */}
+          <div>
+            <label
+              htmlFor="confirmPassword"
+              className="text-sm font-medium text-gray-700 block mb-2"
+            >
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              {...formik.getFieldProps("confirmPassword")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+            />
+            {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+              <div className="text-red-500 mt-1">{formik.errors.confirmPassword}</div>
+            )}
+          </div>
+
           <button
             type="submit"
             className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -143,7 +195,7 @@ const Registration = () => {
             Register
           </button>
         </form>
-        <div className="text-sm mt-2">
+        <div className="text-sm mt-2 text-center">
           <Link
             to="/login"
             className="font-medium text-indigo-600 hover:text-indigo-500"
