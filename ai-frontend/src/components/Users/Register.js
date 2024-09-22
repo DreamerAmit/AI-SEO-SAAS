@@ -82,7 +82,8 @@ const Registration = () => {
         {mutation.isError && (
           <StatusMessage
             type="error"
-            message={mutation?.error?.response?.data?.message}
+            // message={mutation?.error?.response?.data?.message}
+            message="Error"
           />
         )}
         {/* display success */}
