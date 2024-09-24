@@ -11,7 +11,7 @@ const User = require("./models/User");
 require("./utils/connectDB")();
 
 const app = express();
-const PORT = process.env.PORT || 8090;
+const PORT = process.env.PORT || 3000;
 
 //Cron for the trial period : run every single
 cron.schedule("0 0 * * * *", async () => {
@@ -98,8 +98,9 @@ cron.schedule("0 0 1 * * *", async () => {
 app.use(express.json()); //pass incoming json data
 app.use(cookieParser()); //pass the cookie automatically
 const corsOptions = {
-  origin: "http://localhost:3000",
-  credentials: true,
+  origin: "http://localhost:3001", // Allow requests from this origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
+  credentials: true, // Allow credentials (if needed)
 };
 app.use(cors(corsOptions));
 //----Routes-----

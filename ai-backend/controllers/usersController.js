@@ -5,9 +5,9 @@ const User = require("../models/User");
 
 //------Registration-----
 const register = asyncHandler(async (req, res) => {
-  const { username, email, password } = req.body;
+  const { firstName, lastName, email, password, confirmPassword } = req.body;
   //Validate
-  if (!username || !email || !password) {
+  if (!firstName || !lastName || !email || !password || !confirmPassword) {
     res.status(400);
     throw new Error("Please all fields are required");
   }
@@ -23,9 +23,11 @@ const register = asyncHandler(async (req, res) => {
 
   //create the user
   const newUser = new User({
-    username,
+    firstName,
+    lastName,
     password: hashedPassword,
     email,
+    confirmPassword,
   });
   //Add the date the trial will end
   newUser.trialExpires = new Date(
@@ -38,8 +40,10 @@ const register = asyncHandler(async (req, res) => {
     status: true,
     message: "Registration was successfull",
     user: {
-      username,
+      firstName,
+      lastName,
       email,
+      password,
     },
   });
 });

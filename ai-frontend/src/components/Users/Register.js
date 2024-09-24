@@ -49,14 +49,13 @@ const Registration = () => {
       firstName: Yup.string().required("First name is required"),
       lastName: Yup.string().required("Last name is required"),
     }),
-    onSubmit: (values) => {
-      // Here, handle the form submission
-      console.log("Form values", values);
-      mutation.mutate(values); // Redirect user to login page
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 5000);
+    onSubmit: async (values) => {
+      try {
+        const response = await registerAPI(values); // Call the API
+        console.log(response.message); // Handle success
+      } catch (error) {
+        console.error(error.response.data.message); // Handle error
+      }
     },
   });
   console.log(mutation.isSuccess);
