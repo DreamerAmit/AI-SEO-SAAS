@@ -3,46 +3,76 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 const tiers = [
   {
-    name: "Free",
-    id: "Free",
+    name: "Starter",
+    id: "Starter",
     href: "checkout",
-    price: "$0.00/month",
-    amount: 0,
-    description: "The essentials to provide your best work for clients.",
-    features: ["5 Credits", "1 User", "Basic Support"],
+    price: "$5/month",
+    amount: 5,
+    // description: "The essentials to provide your best work for clients.",
+    features: ["100 Credits per month"],
     mostPopular: false,
   },
 
   {
-    name: "Basic",
-    id: "Basic",
+    name: "Growth",
+    id: "Growth",
     href: "checkout",
-    price: "$20/month",
-    amount: 20,
-    description: "A plan that scales with your rapidly growing business.",
+    price: "$19/month",
+    amount: 19,
+    // description: "A plan that scales with your rapidly growing business.",
     features: [
-      "50 Credits",
-      "5 Users",
-      "Priority Support",
-      "Content generation history",
+      "500 Credits per month"
     ],
     mostPopular: true,
+  },
+  {
+    name: "Pro",
+    id: "Pro",
+    href: "checkout",
+    price: "$49/month",
+    amount: 49,
+    // description: "Dedicated support and infrastructure for your company.",
+    features: [
+      "2000 Credits per month"
+    ],
+    mostPopular: false,
+  },
+  {
+    name: "Advanced",
+    id: "Advanced",
+    href: "checkout",
+    price: "$119/month",
+    amount: 119,
+    // description: "Dedicated support and infrastructure for your company.",
+    features: [
+      "5000 Credits per month"
+    ],
+    mostPopular: false,
   },
   {
     name: "Premium",
     id: "Premium",
     href: "checkout",
-    price: "$50/month",
-    amount: 50,
-    description: "Dedicated support and infrastructure for your company.",
+    price: "$229/month",
+    amount: 229,
+    // description: "Dedicated support and infrastructure for your company.",
     features: [
-      "100 Credits",
-      "10 Users",
-      "Priority Support",
-      "Content generation history",
+      "10,000 Credits per month"
     ],
     mostPopular: false,
   },
+  {
+    name: "Credit Packs",
+    id: "Credit Packs",
+    href: "checkout",
+    price: "$3/pack",
+    amount: 3 ,
+    // description: "Dedicated support and infrastructure for your company.",
+    features: [
+      "50 Credits"
+    ],
+    mostPopular: false,
+  }
 ];
 
 function classNames(...classes) {
@@ -68,16 +98,19 @@ export default function Plans() {
     <div className="bg-gray-900 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-indigo-400">
+          {/* <h2 className="text-base font-semibold leading-7 text-indigo-400">
             Pricing
-          </h2>
+          </h2> */}
           <p className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Pricing plans for teams of&nbsp;all&nbsp;sizes
+            Pricing Plans
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-300">
-          Choose an affordable plan that’s packed with the best features for
-          engaging your audience, creating customer loyalty, and driving sales.
+          You use 1 credit each time you generate alt text with our service.
+          <br />
+          Your first 5 credits are FREE.
+          <br />
+          Purchase a plan or credit pack for additional credits.
         </p>
         <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {tiers.map((tier) => (

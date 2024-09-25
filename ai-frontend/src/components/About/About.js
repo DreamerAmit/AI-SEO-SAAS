@@ -7,21 +7,21 @@ import {
 
 const cards = [
   {
-    name: "Innovative Solutions",
+    name: "AI Powered Speed",
     description:
-      "At Masync, innovation drives our solutions. We specialize in transforming complex AI technology into user-friendly tools for content generation, ensuring our clients stay ahead in the digital content race.",
+      "We believe that AI models are now efficient enough to understand the image and generate a good AltText for it.It has the potential to save a lot of time while adding AltText for modern websites.",
     icon: PhoneIcon,
   },
   {
-    name: "Dedicated Customer Support",
+    name: "SEO Friendly",
     description:
-      "We believe in empowering our users with continuous support. Our dedicated team is always on standby to assist with any queries, ensuring a smooth, uninterrupted experience in content creation.",
+      "When you use Pic2Alt, you can be sure that the AltText generated is SEO friendly and can help your website rank better in search engines.",
     icon: LifebuoyIcon,
   },
   {
-    name: "Press & Media Collaborations",
+    name: "Quick Support",
     description:
-      "Masync is at the forefront of AI-driven content generation. We're eager to collaborate with media and press to share insights and developments in AI technology, shaping the future of digital content.",
+      "We have a very quick support team to help you with any queries you may have while using Pic2Alt.",
     icon: NewspaperIcon,
   },
 ];
@@ -35,13 +35,10 @@ export default function AboutUs() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:mx-0">
           <h2 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-            Masync AI - Redefining Content Creation
+            Pic2Alt - Quick AltText Generation using AI
           </h2>
           <p className="mt-6 text-lg leading-8 text-gray-300">
-            Masync AI is revolutionizing the way content is created. Our
-            cutting-edge AI technology automates and enhances content
-            generation, enabling creators to produce high-quality, engaging
-            material with ease.
+          Pic2Alt was built to help customers solve a very specific problem ie to generate AltText for multiple images within a fraction of time and that too automatically, eliminating the need of manual copywriter to see the image, think and then write an AltText that may be SEO friendly.
           </p>
         </div>
         <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-6 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-3 lg:gap-8">
