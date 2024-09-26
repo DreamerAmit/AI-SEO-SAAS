@@ -23,8 +23,8 @@ const Dashboard = () => {
   } else {
     return (
       <div className="mx-auto p-4 bg-gray-900 w-screen">
-        <h1 className="text-3xl font-bold text-center mb-8 text-blue-600">
-          User Dashboard
+        <h1 className="text-3xl font-bold text-center mb-8 text-green-600">
+          Welcome, Amit
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -123,25 +123,24 @@ const Dashboard = () => {
 
           {/* Trial Information Section */}
           <div className="mb-6 bg-white p-4 shadow rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Trial Information</h2>
-            <div>
+            <h2 className="text-xl font-semibold mb-4">Images with AltText in your Library</h2>
+            <div className="flex flex-col h-full">
               <p className="mb-4">
-                Trial Status:{" "}
-                {data?.user?.trialActive ? (
+                Count:{" 5"}
+                {/* {data?.user?.trialActive ? (
                   <span className="text-green-500">Active</span>
                 ) : (
                   <span className="text-yellow-600">Inactive</span>
-                )}
+                )} */}
               </p>
-              <p className="mb-4">
-                Expires on: {new Date(data?.user?.trialExpires).toDateString()}
-              </p>
-              <Link
-                to="/plans"
-                className=" py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Upgrade to Premium
-              </Link>
+              <div className="mt-11">
+                <Link
+                  to="/plans"
+                  className=" py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  View All
+                </Link>
+              </div>
             </div>
           </div>
 
