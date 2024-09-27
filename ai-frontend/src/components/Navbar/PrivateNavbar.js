@@ -15,7 +15,8 @@ const user = {
 };
 const navigation = [
   { name: "Dashboard", href: "/dashboard", current: true },
-  { name: "Pricing", href: "/plans", current: true },
+  // { name: "Pricing", href: "/plans", current: true },
+  { name: "Images", href: "/images", current: true },
 ];
 const userNavigation = [{ name: "Sign out", href: "#" }];
 
@@ -79,13 +80,13 @@ export default function PrivateNavbar() {
               </div>
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Link
+                  {/* <Link
                     to="/generate-content"
                     className="relative animate-bounce inline-flex items-center gap-x-1.5 rounded-md bg-purple-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
                   >
                     <PlusIcon className="-ml-0.5 h-5 w-5" aria-hidden="true" />
                     Generate content
-                  </Link>
+                  </Link> */}
                   {/* Logout */}
                   <button
                     onClick={handleLogout}

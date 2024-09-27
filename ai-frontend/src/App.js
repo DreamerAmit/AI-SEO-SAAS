@@ -15,6 +15,7 @@ import PaymentSuccess from "./components/StripePayment/PaymentSuccess";
 import ContentGenerationHistory from "./components/ContentGeneration/ContentHistory";
 import AppFeatures from "./components/Features/Features";
 import AboutUs from "./components/About/About";
+import Images from './components/Images/Images';
 
 export default function App() {
   //custom auth hook
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/success" element={<PaymentSuccess />} />
           <Route path="/features" element={<AppFeatures />} />
           <Route path="/about" element={<AboutUs />} />
+          <Route path="/images" element={<Images />} />
         </Routes>
       </BrowserRouter>
     </>
