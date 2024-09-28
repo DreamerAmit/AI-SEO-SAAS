@@ -16,6 +16,10 @@ import ContentGenerationHistory from "./components/ContentGeneration/ContentHist
 import AppFeatures from "./components/Features/Features";
 import AboutUs from "./components/About/About";
 import Images from './components/Images/Images';
+import React from 'react';
+// import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import AccountPage from './components/Account/Account';
+import Help from './components/Help/Help';
 
 export default function App() {
   //custom auth hook
@@ -75,6 +79,8 @@ export default function App() {
           <Route path="/features" element={<AppFeatures />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/images" element={<Images />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/help" element={<Help />} />
         </Routes>
       </BrowserRouter>
     </>

@@ -17,6 +17,8 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", current: true },
   // { name: "Pricing", href: "/plans", current: true },
   { name: "Images", href: "/images", current: true },
+  { name: "Account", href: "/account", current: true },
+  { name: "Help", href: "/help", current: true },
 ];
 const userNavigation = [{ name: "Sign out", href: "#" }];
 

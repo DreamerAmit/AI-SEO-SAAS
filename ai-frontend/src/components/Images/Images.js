@@ -32,9 +32,9 @@ const Images = () => {
           <button className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center">
             <FaPlus className="mr-2" /> Image
           </button>
-          {/* <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
+          { <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
             <BsGlobe className="mr-2" /> Scrape Page
-          </button> */}
+          </button> }
           <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
             <FaFileImport className="mr-2" /> Import
           </button>
