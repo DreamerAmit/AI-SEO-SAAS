@@ -11,19 +11,19 @@ import { jwtDecode } from "jwt-decode";
 import { useGoogleLogin } from '@react-oauth/google';
 
 // Custom Google Button component
-const CustomGoogleButton = ({ onClick }) => (
-  <button
-    onClick={onClick}
-    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-  >
-    <img
-      className="mr-2 h-5 w-5"
-      src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-      alt="Google logo"
-    />
-    <span className="font-bold">Sign in with Google</span>
-  </button>
-);
+// const CustomGoogleButton = ({ onClick }) => (
+//   <button
+//     onClick={onClick}
+//     className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+//   >
+//     <img
+//       className="mr-2 h-5 w-5"
+//       src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+//       alt="Google logo"
+//     />
+//     <span className="font-bold">Sign in with Google</span>
+//   </button>
+// );
 
 // Validation schema using Yup
 const validationSchema = Yup.object({
@@ -117,7 +117,7 @@ const Login = () => {
         </h2>
         
         <div className="mt-8 space-y-6">
-          <CustomGoogleButton onClick={() => googleLogin()} />
+          {/* <CustomGoogleButton onClick={() => googleLogin()} /> */}
 
           {/* <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -157,11 +157,11 @@ const Login = () => {
             </p> 
           </div> */}
           {/* OR Divider */}
-          <div className="flex items-center justify-center my-4">
+          {/* <div className="flex items-center justify-center my-4">
             <hr className="w-1/3 border-gray-300" />
             <span className="mx-2 text-gray-500">OR</span>
             <hr className="w-1/3 border-gray-300" />
-          </div>
+          </div> */}
           {/* Login Form */}
           <form onSubmit={formik.handleSubmit} className="space-y-6">
             {/* Email input field */}
