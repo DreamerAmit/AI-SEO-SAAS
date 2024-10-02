@@ -67,3 +67,12 @@ export const getUserProfileAPI = async () => {
   );
   return response?.data;
 };
+
+export const googleSignInAPI = async (tokenId) => {
+  try {
+    const response = await axios.post('/api/users/google-signin', { tokenId });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import Registration from "./components/Users/Register";
 import Login from "./components/Users/Login";
 import Dashboard from "./components/Users/Dashboard";
@@ -16,8 +18,6 @@ import ContentGenerationHistory from "./components/ContentGeneration/ContentHist
 import AppFeatures from "./components/Features/Features";
 import AboutUs from "./components/About/About";
 import Images from './components/Images/Images';
-import React from 'react';
-// import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import AccountPage from './components/Account/Account';
 import Help from './components/Help/Help';
 
@@ -26,7 +26,7 @@ export default function App() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <>
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
       <BrowserRouter>
         {/* Navbar */}
         {isAuthenticated ? <PrivateNavbar /> : <PublicNavbar />}
@@ -83,6 +83,6 @@ export default function App() {
           <Route path="/help" element={<Help />} />
         </Routes>
       </BrowserRouter>
-    </>
+    </GoogleOAuthProvider>
   );
 }

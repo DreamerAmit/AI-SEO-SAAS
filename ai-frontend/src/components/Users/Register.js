@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { registerAPI } from "../../apis/user/usersAPI";
+import { registerAPI, googleSignInAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
 import { useAuth } from "../../AuthContext/AuthContext";
 
@@ -29,6 +29,20 @@ const Registration = () => {
   }, [isAuthenticated]);
   //mutation
   const mutation = useMutation({ mutationFn: registerAPI });
+  // Google Sign-In mutation
+  const googleSignInMutation = useMutation({ mutationFn: googleSignInAPI });
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const response = await googleSignInMutation.mutateAsync();
+      // Handle successful Google sign-in
+      console.log(response);
+      // You might want to update the auth context or redirect the user here
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+    }
+  };
+
   // Formik setup for form handling
   const formik = useFormik({
     initialValues: {
@@ -64,8 +78,30 @@ const Registration = () => {
   console.log(mutation.error);
   console.log(mutation);
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 pt-20">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 m-4">
+        {/* Google Sign-up button */}
+        <button
+          onClick={handleGoogleSignIn}
+          className="w-full mb-4 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <div className="flex items-center justify-center">
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google logo"
+              className="w-5 h-5 mr-2"
+            />
+            Sign up with Google
+          </div>
+        </button>
+
+        <div className="relative mb-4">
+          <hr className="border-t border-gray-300" />
+          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-5 text-sm text-gray-500">
+            OR
+          </span>
+        </div>
+
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
           Create an Account
         </h2>
