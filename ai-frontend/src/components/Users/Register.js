@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { registerAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
-import { useAuth } from "../../AuthContext/AuthContext";
+import SuccessModal from "./SuccessModal";
+import { useAuth } from '../../AuthContext/AuthContext'; // Add this
+import { useNavigate, Link } from 'react-router-dom'; // Add this
 
 // Validation schema
 const validationSchema = Yup.object({
@@ -18,6 +19,8 @@ const validationSchema = Yup.object({
 });
 
 const Registration = () => {
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   //custom auth hook
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
@@ -31,22 +34,14 @@ const Registration = () => {
   const mutation = useMutation({
     mutationFn: registerAPI,
     onSuccess: (data) => {
-      console.log("Registration response:", data);
       if (data.status === "success") {
-        console.log("Registration successful", data);
-        // Show success message to user
-        // You might want to automatically log the user in here
-        // Or redirect them to the login page
-        navigate("/login");
+        setShowSuccessModal(true);
       } else {
         console.error("Registration failed", data);
-        // Show error message to user
       }
     },
     onError: (error) => {
       console.error("Registration error:", error);
-      console.error("Error response:", error.response);
-      console.error("Error message:", error.message);
     }
   });
 
@@ -124,8 +119,10 @@ const Registration = () => {
           />
         )}
         {/* display success */}
-        {mutation.isSuccess && (
-          <StatusMessage type="success" message="Registration successful" />
+        {showSuccessModal && (
+          <SuccessModal
+            onClose={() => setShowSuccessModal(false)}
+          />
         )}
         <form onSubmit={formik.handleSubmit} className="space-y-6">
           {/* First Name input field */}
