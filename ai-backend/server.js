@@ -108,6 +108,9 @@ app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/openai", openAIRouter);
 app.use("/api/v1/stripe", stripeRouter);
 
+// Make sure there's no global auth middleware before your routes
+app.use('/api/users', userRoutes);
+
 //---Error handler middleware----
 app.use(errorHandler);
 //start the server

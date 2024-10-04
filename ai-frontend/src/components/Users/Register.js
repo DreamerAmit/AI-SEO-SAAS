@@ -3,7 +3,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { registerAPI, googleSignInAPI } from "../../apis/user/usersAPI";
+import { registerAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
 import { useAuth } from "../../AuthContext/AuthContext";
 
@@ -26,22 +26,29 @@ const Registration = () => {
     if (isAuthenticated) {
       navigate("/dashboard");
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
   //mutation
-  const mutation = useMutation({ mutationFn: registerAPI });
-  // Google Sign-In mutation
-  const googleSignInMutation = useMutation({ mutationFn: googleSignInAPI });
-
-  const handleGoogleSignIn = async () => {
-    try {
-      const response = await googleSignInMutation.mutateAsync();
-      // Handle successful Google sign-in
-      console.log(response);
-      // You might want to update the auth context or redirect the user here
-    } catch (error) {
-      console.error("Google sign-in error:", error);
+  const mutation = useMutation({
+    mutationFn: registerAPI,
+    onSuccess: (data) => {
+      console.log("Registration response:", data);
+      if (data.status === "success") {
+        console.log("Registration successful", data);
+        // Show success message to user
+        // You might want to automatically log the user in here
+        // Or redirect them to the login page
+        navigate("/login");
+      } else {
+        console.error("Registration failed", data);
+        // Show error message to user
+      }
+    },
+    onError: (error) => {
+      console.error("Registration error:", error);
+      console.error("Error response:", error.response);
+      console.error("Error message:", error.message);
     }
-  };
+  });
 
   // Formik setup for form handling
   const formik = useFormik({
@@ -63,13 +70,8 @@ const Registration = () => {
       firstName: Yup.string().required("First name is required"),
       lastName: Yup.string().required("Last name is required"),
     }),
-    onSubmit: async (values) => {
-      try {
-        const response = await registerAPI(values); // Call the API
-        console.log(response.message); // Handle success
-      } catch (error) {
-        console.error(error.response.data.message); // Handle error
-      }
+    onSubmit: (values) => {
+      mutation.mutate(values);
     },
   });
   console.log(mutation.isSuccess);
@@ -110,20 +112,20 @@ const Registration = () => {
           required.
         </p>
         {/* display loading */}
-        {mutation.isPending && (
-          <StatusMessage type="loading" message="Loading..." />
+        {mutation.isLoading && (
+          <StatusMessage type="loading" message="Registering..." />
         )}
         {/* display error */}
         {mutation.isError && (
           <StatusMessage
             type="error"
             // message={mutation?.error?.response?.data?.message}
-            message="Error"
+            message={mutation.error?.response?.data?.message || "Registration failed"}
           />
         )}
         {/* display success */}
         {mutation.isSuccess && (
-          <StatusMessage type="success" message="Registration success" />
+          <StatusMessage type="success" message="Registration successful" />
         )}
         <form onSubmit={formik.handleSubmit} className="space-y-6">
           {/* First Name input field */}

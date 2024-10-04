@@ -5,47 +5,66 @@ const User = require("../models/User");
 
 //------Registration-----
 const register = asyncHandler(async (req, res) => {
-  const { firstName, lastName, email, password, confirmPassword } = req.body;
-  //Validate
-  if (!firstName || !lastName || !email || !password || !confirmPassword) {
-    res.status(400);
-    throw new Error("Please all fields are required");
-  }
-  //Check the email is taken
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    res.status(400);
-    throw new Error("User already exist");
-  }
-  //Hash the user password
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  // This function should NOT have any authentication checks
+  try {
+    const { firstName, lastName, email, password, confirmPassword } = req.body;
+    
+    console.log("Registration attempt for:", email);
 
-  //create the user
-  const newUser = new User({
-    firstName,
-    lastName,
-    password: hashedPassword,
-    email,
-    confirmPassword,
-  });
-  //Add the date the trial will end
-  newUser.trialExpires = new Date(
-    new Date().getTime() + newUser.trialPeriod * 24 * 60 * 60 * 1000
-  );
+    // Validate
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      console.log("Validation failed: Missing fields");
+      res.status(400);
+      throw new Error("All fields are required");
+    }
+    
+    // Check if the email is taken
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      console.log("User already exists:", email);
+      res.status(400);
+      throw new Error("Email already exists");
+    }
+    
+    // Hash the user password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-  //Save the user
-  await newUser.save();
-  res.json({
-    status: true,
-    message: "Registration was successfull",
-    user: {
+    // Create the user
+    const newUser = new User({
       firstName,
       lastName,
+      password: hashedPassword,
       email,
-      password,
-    },
-  });
+    });
+    
+    // Add the date the trial will end
+    newUser.trialExpires = new Date(
+      new Date().getTime() + newUser.trialPeriod * 24 * 60 * 60 * 1000
+    );
+
+    // Save the user
+    await newUser.save();
+    
+    console.log("User registered successfully:", email);
+
+    // Send response
+    res.status(201).json({
+      status: "success",
+      message: "Registration was successful",
+      user: {
+        firstName,
+        lastName,
+        email,
+      },
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Registration failed: " + error.message
+    });
+  }
 });
 //------Login---------
 const login = asyncHandler(async (req, res) => {
