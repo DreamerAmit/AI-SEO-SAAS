@@ -14,11 +14,18 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,
     },
     password: {
       type: String,
       required: true,
     },
+    isEmailConfirmed: {
+      type: Boolean,
+      default: false,
+    },
+    confirmationToken: String,
+    confirmationTokenExpires: Date,
     trialPeriod: {
       type: Number,
       default: 3, //3 days

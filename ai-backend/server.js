@@ -10,6 +10,7 @@ const stripeRouter = require("./routes/stripeRouter");
 const User = require("./models/User");
 require("./utils/connectDB")();
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -109,7 +110,7 @@ app.use("/api/v1/openai", openAIRouter);
 app.use("/api/v1/stripe", stripeRouter);
 
 // Make sure there's no global auth middleware before your routes
-app.use('/api/users', userRoutes);
+app.use('/api/users', usersRouter);
 
 //---Error handler middleware----
 app.use(errorHandler);

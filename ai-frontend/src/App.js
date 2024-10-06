@@ -20,7 +20,7 @@ import AboutUs from "./components/About/About";
 import Images from './components/Images/Images';
 import AccountPage from './components/Account/Account';
 import Help from './components/Help/Help';
-
+import ConfirmEmail from './components/Users/emailConfirmation';
 export default function App() {
   //custom auth hook
   const { isAuthenticated } = useAuth();
@@ -81,6 +81,7 @@ export default function App() {
           <Route path="/images" element={<Images />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>

@@ -24,7 +24,7 @@ const SuccessModal = ({ onClose }) => {
           <h3 className="text-lg leading-6 font-medium text-gray-900">Registration Successful!</h3>
           <div className="mt-2 px-7 py-3">
             <p className="text-sm text-gray-500">
-              Your account has been created successfully. Please check your email to confirm your account.
+              Your account has been created successfully. Please check your email inbox and confirm your account by clicking on the link in the email.
             </p>
           </div>
           <div className="items-center px-4 py-3">
