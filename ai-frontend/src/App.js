@@ -20,7 +20,7 @@ import AboutUs from "./components/About/About";
 import Images from './components/Images/Images';
 import AccountPage from './components/Account/Account';
 import Help from './components/Help/Help';
-import ConfirmEmail from './components/Users/emailConfirmation';
+import ConfirmEmail from './components/Users/EmailConfirmation';
 export default function App() {
   //custom auth hook
   const { isAuthenticated } = useAuth();

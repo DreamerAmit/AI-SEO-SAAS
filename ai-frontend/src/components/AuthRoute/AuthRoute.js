@@ -1,16 +1,14 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../AuthContext/AuthContext";
-import AuthCheckingComponent from "../Alert/AuthCheckingComponent";
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../AuthContext/AuthContext';
 
 const AuthRoute = ({ children }) => {
-  const location = useLocation();
-  const { isAuthenticated, isLoading, isError } = useAuth();
-  if (isLoading) {
-    return <AuthCheckingComponent />;
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
   }
-  if (isError || isAuthenticated === false) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+
   return children;
 };
 

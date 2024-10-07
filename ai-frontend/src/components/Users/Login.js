@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Link, useNavigate } from "react-router-dom";
@@ -14,16 +14,34 @@ const Login = () => {
   const loginMutation = useMutation({
     mutationFn: loginAPI,
     onSuccess: (data) => {
-      console.log("Login successful", data);
-      loginUser(data);
-      navigate("/dashboard");
+      console.log("Full login API response:", data);
+      if (data && data.status === "success" && data.token) {
+        loginUser({
+          token: data.token,
+          user: {
+            id: data.user._id,
+            username: data.user.username,
+            email: data.user.email
+          }
+        });
+        console.log("User logged in, navigating to dashboard");
+        navigate("/dashboard");
+      } else {
+        console.error("Login API did not return expected data. Full response:", data);
+      }
     },
     onError: (error) => {
       console.error("Login failed", error);
-      console.error("Error response:", error.response);
-      console.error("Error message:", error.message);
+      console.error("Error response:", error.response?.data);
     }
   });
+
+  // Reset mutation state when component unmounts
+  useEffect(() => {
+    return () => {
+      loginMutation.reset();
+    };
+  }, []);
 
   const formik = useFormik({
     initialValues: {
@@ -35,6 +53,7 @@ const Login = () => {
       password: Yup.string().required("Required"),
     }),
     onSubmit: (values) => {
+      loginMutation.reset(); // Reset previous mutation state
       loginMutation.mutate(values);
     },
   });
@@ -50,10 +69,10 @@ const Login = () => {
           {loginMutation.isLoading && (
             <StatusMessage type="loading" message="Logging in..." />
           )}
-          {loginMutation.isError && (
+          {loginMutation.isError && !loginMutation.isSuccess && (
             <StatusMessage
               type="error"
-              message={loginMutation.error?.response?.data?.message || "Login failed"}
+              message={loginMutation.error?.response?.data?.message || "Login Failed"}
             />
           )}
           {loginMutation.isSuccess && (

@@ -1,42 +1,38 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { checkUserAuthStatusAPI } from "../apis/user/usersAPI";
-import { useQuery } from "@tanstack/react-query";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  //Make request using react query
-  const { isError, isLoading, data, isSuccess } = useQuery({
-    queryFn: checkUserAuthStatusAPI,
-    queryKey: ["checkAuth"],
-  });
-  //update the authenticated user
-  useEffect(() => {
-    if (isSuccess) {
-      setIsAuthenticated(data);
-    }
-  }, [data, isSuccess]);
 
-  //Update the user auth after login
-  const login = () => {
+  useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      setIsAuthenticated(true);
+      // Optionally, fetch user data here and set the user state
+    }
+  }, []);
+
+  const loginUser = (userData) => {
+    console.log("loginUser called with:", userData);
+    setUser(userData.user);
     setIsAuthenticated(true);
+    localStorage.setItem('authToken', userData.token);
+    console.log("User state updated, isAuthenticated set to true");
   };
-  //Update the user auth after login
-  const logout = () => {
+
+  const logoutUser = () => {
+    setUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem('authToken');
   };
 
   return (
-    <AuthContext.Provider
-      value={{ isAuthenticated, isError, isLoading, isSuccess, login, logout }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated, loginUser, logoutUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-//Custom hook
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

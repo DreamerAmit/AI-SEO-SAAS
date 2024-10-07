@@ -66,14 +66,40 @@ usersRouter.post("/register", async (req, res) => {
 usersRouter.get("/confirm-email/:token", async (req, res) => {
   try {
     const { token } = req.params;
+    console.log('Received token:', token);
 
-    const user = await User.findOne({
-      confirmationToken: token,
-      confirmationTokenExpires: { $gt: Date.now() }
+    // Log all users with this token or confirmed email
+    const users = await User.find({
+      $or: [
+        { confirmationToken: token },
+        { isEmailConfirmed: true }
+      ]
     });
 
-    if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired confirmation token' });
+    console.log('Matching users:', users);
+
+    if (users.length === 0) {
+      console.log('No user found with this token');
+      return res.status(400).json({ message: 'Invalid confirmation token' });
+    }
+
+    const user = users[0];
+    console.log('User state:', {
+      id: user._id,
+      email: user.email,
+      isEmailConfirmed: user.isEmailConfirmed,
+      confirmationToken: user.confirmationToken,
+      confirmationTokenExpires: user.confirmationTokenExpires
+    });
+
+    if (user.isEmailConfirmed) {
+      console.log('Account Confirmed');
+      return res.json({ status: "success", message: 'Account confirmed successfully, now click on Login button to continue' });
+    }
+
+    if (user.confirmationTokenExpires && user.confirmationTokenExpires < Date.now()) {
+      console.log('Token expired');
+      return res.status(400).json({ message: 'Confirmation token has expired' });
     }
 
     user.isEmailConfirmed = true;
@@ -81,8 +107,9 @@ usersRouter.get("/confirm-email/:token", async (req, res) => {
     user.confirmationTokenExpires = undefined;
 
     await user.save();
+    console.log('User updated successfully');
 
-    res.json({ message: 'Email confirmed successfully' });
+  //  res.json({ message: 'Email confirmed successfully' });
   } catch (error) {
     console.error('Email confirmation error:', error);
     res.status(500).json({ message: 'Server error during email confirmation' });
@@ -93,5 +120,6 @@ usersRouter.post("/login", login);
 usersRouter.post("/logout", logout);
 usersRouter.get("/profile", isAuthenticated, userProfile);
 usersRouter.get("/auth/check", isAuthenticated, checkAuth);
+
 
 module.exports = usersRouter;

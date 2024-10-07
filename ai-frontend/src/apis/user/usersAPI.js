@@ -20,17 +20,14 @@ export const registerAPI = async (userData) => {
 //=======Login=====
 
 export const loginAPI = async (userData) => {
-  const response = await axios.post(
-    "http://localhost:3000/api/v1/users/login",
-    {
-      email: userData?.email,
-      password: userData?.password,
-    },
-    {
-      withCredentials: true,
-    }
-  );
-  return response?.data;
+  try {
+    const response = await axios.post('http://localhost:3000/api/v1/users/login', userData);
+    console.log("Raw API response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Login API error:", error.response?.data);
+    throw error;
+  }
 };
 //=======Check auth=====
 
