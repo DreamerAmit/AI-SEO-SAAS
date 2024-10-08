@@ -24,6 +24,7 @@ const Login = () => {
             email: data.user.email
           }
         });
+        localStorage.setItem("token", data.token);
         console.log("User logged in, navigating to dashboard");
         navigate("/dashboard");
       } else {

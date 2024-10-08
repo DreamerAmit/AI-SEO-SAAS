@@ -55,14 +55,26 @@ export const logoutAPI = async () => {
 //=======Logout =====
 
 export const getUserProfileAPI = async () => {
-  const response = await axios.get(
-    "http://localhost:3000/api/v1/users/profile",
+  const token = localStorage.getItem("token");
+  console.log("Token retrieved from localStorage:", token); // For debugging
 
-    {
-      withCredentials: true,
-    }
-  );
-  return response?.data;
+  if (!token) {
+    throw new Error("No token found. Please log in again.");
+  }
+
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+
+  try {
+    const response = await axios.get("http://localhost:3000/api/v1/users/profile", config);
+    return response.data;
+  } catch (error) {
+    console.error("Error in getUserProfileAPI:", error);
+    throw error;
+  }
 };
 
 export const googleSignInAPI = async (tokenId) => {

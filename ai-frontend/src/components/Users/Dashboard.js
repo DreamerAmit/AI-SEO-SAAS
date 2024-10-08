@@ -10,15 +10,21 @@ const Dashboard = () => {
     queryKey: ["profile"],
   });
 
+  console.log("Dashboard query state:", { isLoading, isError, data, error });
+
   //dsiplay loading
   if (isLoading) {
     return <StatusMessage type="loading" message="Loading please wait..." />;
   }
 
   //check for error
-  else if (isError) {
+  if (isError) {
+    console.error("Dashboard error:", error);
     return (
-      <StatusMessage type="error" message={error?.response?.data?.message} />
+      <StatusMessage 
+        type="error" 
+        message={error?.message || "An unknown error occurred"} 
+      />
     );
   } else {
     return (
