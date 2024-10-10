@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaPlus, FaFileImport, FaFileExport } from 'react-icons/fa';
 import { BsGlobe } from 'react-icons/bs';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Images = () => {
   const [selectedCount, setSelectedCount] = useState(0);
@@ -14,6 +15,18 @@ const Images = () => {
     }
   ]);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if there are scraped images from the ScrapePage
+    if (location.state && location.state.scrapedImages) {
+      setImages(prevImages => [...prevImages, ...location.state.scrapedImages]);
+      // Clear the location state to avoid duplicate additions
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
   const handleSearch = () => {
     // Implement search functionality
     console.log('Searching for:', searchText);
@@ -24,23 +37,30 @@ const Images = () => {
     console.log('Deleting selected images');
   };
 
+  const handleScrapeClick = () => {
+    navigate('/scrape');
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Images</h1>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
         <div className="flex flex-wrap gap-2 mb-2 sm:mb-0">
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center">
+          {/* <button className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center">
             <FaPlus className="mr-2" /> Image
-          </button>
-          { <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
+          </button> */}
+          <button
+            className="bg-indigo-600 text-white px-4 py-2 rounded-md flex items-center"
+            onClick={handleScrapeClick}
+          >
             <BsGlobe className="mr-2" /> Scrape Page
-          </button> }
-          <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
+          </button>
+          {/* <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
             <FaFileImport className="mr-2" /> Import
-          </button>
-          <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
+          </button> */}
+          {/* <button className="bg-white text-gray-700 px-4 py-2 rounded-md border flex items-center">
             <FaFileExport className="mr-2" /> Export
-          </button>
+          </button> */}
         </div>
         <div className="flex space-x-2 mt-2 sm:mt-0">
           <input

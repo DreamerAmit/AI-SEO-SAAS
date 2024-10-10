@@ -21,6 +21,8 @@ import Images from './components/Images/Images';
 import AccountPage from './components/Account/Account';
 import Help from './components/Help/Help';
 import ConfirmEmail from './components/Users/EmailConfirmation';
+import ScrapePage from './components/Images/ScrapePage';  
+import ScrapedImages from './components/Images/ScrapedImages';
 export default function App() {
   //custom auth hook
   const { isAuthenticated } = useAuth();
@@ -78,7 +80,9 @@ export default function App() {
           <Route path="/success" element={<PaymentSuccess />} />
           <Route path="/features" element={<AppFeatures />} />
           <Route path="/about" element={<AboutUs />} />
-          <Route path="/images" element={<Images />} />
+          <Route path="/images" element={<Images />} /> 
+          <Route path="/scrape" element={<ScrapePage />} />
+          <Route path="/scraped-images" element={<ScrapedImages />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/help" element={<Help />} />
           <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
