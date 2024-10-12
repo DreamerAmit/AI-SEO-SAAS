@@ -1,118 +1,109 @@
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const cron = require("node-cron");
-const cors = require("cors");
-require("dotenv").config();
-const usersRouter = require("./routes/usersRouter");
-const { errorHandler } = require("./middlewares/errorMiddleware");
-const openAIRouter = require("./routes/openAIRouter");
-const stripeRouter = require("./routes/stripeRouter");
-const User = require("./models/User");
-require("./utils/connectDB")();
-
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { connectDB, query } = require('./connectDB');
+const userRoutes = require('./routes/usersRouter');
+const sequelize = require('./Config/database');
+const { Pool } = require('pg');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-//Cron for the trial period : run every single
-cron.schedule("0 0 * * * *", async () => {
-  console.log("This task runs every second");
+// CORS configuration
+const allowedOrigins = ['http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'];
+
+app.use((req, res, next) => {
+  console.log('Incoming request:', req.method, req.url, 'from origin:', req.headers.origin);
+  next();
+});
+
+app.use(cors({
+  origin: function(origin, callback) {
+    console.log('CORS origin:', origin);
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
+app.use(express.json());
+
+// Test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Server is running' });
+});
+
+// Database test route
+app.get('/api/db-test', async (req, res) => {
   try {
-    //get the current date
-    const today = new Date();
-    const updatedUser = await User.updateMany(
-      {
-        trialActive: true,
-        trialExpires: { $lt: today },
-      },
-      {
-        trialActive: false,
-        subscriptionPlan: "Free",
-        monthlyRequestCount: 5,
-      }
-    );
-    console.log(updatedUser);
+    const result = await query('SELECT NOW()');
+    res.json({ message: 'Database connected', time: result.rows[0].now });
   } catch (error) {
-    console.log(error);
+    console.error('Database test error:', error);
+    res.status(500).json({ message: 'Database test failed', error: error.message });
   }
 });
 
-//Cron for the Free plan: run at the end of every month
-cron.schedule("0 0 1 * * *", async () => {
-  try {
-    //get the current date
-    const today = new Date();
-    await User.updateMany(
-      {
-        subscriptionPlan: "Free",
-        nextBillingDate: { $lt: today },
-      },
-      {
-        monthlyRequestCount: 0,
-      }
-    );
-  } catch (error) {
-    console.log(error);
-  }
+// Routes come after middleware
+app.use('/api/v1/users', userRoutes);
+
+// PostgreSQL connection setup
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
 });
 
-//Cron for the Basic plan: run at the end of every month
-cron.schedule("0 0 1 * * *", async () => {
+// Test the database connection
+const testDbConnection = async () => {
   try {
-    //get the current date
-    const today = new Date();
-    await User.updateMany(
-      {
-        subscriptionPlan: "Basic",
-        nextBillingDate: { $lt: today },
-      },
-      {
-        monthlyRequestCount: 0,
-      }
-    );
-  } catch (error) {
-    console.log(error);
+    const client = await pool.connect();
+    console.log('Connected to PostgreSQL database');
+    client.release();
+  } catch (err) {
+    console.error('Error connecting to the database', err);
   }
-});
-
-//Cron for the Premium plan: run at the end of every month
-cron.schedule("0 0 1 * * *", async () => {
-  try {
-    //get the current date
-    const today = new Date();
-    await User.updateMany(
-      {
-        subscriptionPlan: "Premium",
-        nextBillingDate: { $lt: today },
-      },
-      {
-        monthlyRequestCount: 0,
-      }
-    );
-  } catch (error) {
-    console.log(error);
-  }
-});
-//Cron paid plan
-
-//----middlewares----
-app.use(express.json()); //pass incoming json data
-app.use(cookieParser()); //pass the cookie automatically
-const corsOptions = {
-  origin: "http://localhost:3001", // Allow requests from this origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Specify allowed methods
-  credentials: true, // Allow credentials (if needed)
 };
-app.use(cors(corsOptions));
-//----Routes-----
-app.use("/api/v1/users", usersRouter);
-app.use("/api/v1/openai", openAIRouter);
-app.use("/api/v1/stripe", stripeRouter);
 
-// Make sure there's no global auth middleware before your routes
-app.use('/api/users', usersRouter);
+const PORT = process.env.PORT || 3001;
 
-//---Error handler middleware----
-app.use(errorHandler);
-//start the server
-app.listen(PORT, console.log(`Server is running on port ${PORT}`));
+const startServer = async () => {
+  try {
+    await connectDB();
+    sequelize.sync({ force: false }) // Use { force: true } only in development to recreate tables
+      .then(() => {
+        console.log('Database & tables created!');
+      });
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  app.close(() => {
+    console.log('HTTP server closed');
+  });
+});
+
+// Error handling middleware should come last
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is working' });
+});

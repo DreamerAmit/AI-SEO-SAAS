@@ -1,77 +1,74 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const sequelize = require('../Config/database'); // Adjust this path as needed
 
-//Schema
-const userSchema = new mongoose.Schema(
-  {
-    firstName: {
-      type: String,
-      required: true,
-    },
-    lastName: {
-      type: String,
-      required: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    isEmailConfirmed: {
-      type: Boolean,
-      default: false,
-    },
-    confirmationToken: String,
-    confirmationTokenExpires: Date,
-    trialPeriod: {
-      type: Number,
-      default: 3, //3 days
-    },
-    trialActive: {
-      type: Boolean,
-      default: true,
-    },
-    trialExpires: {
-      type: Date,
-    },
-    subscriptionPlan: {
-      type: String,
-      enum: ["Trial", "Free", "Basic", "Premium"],
-      default: "Trial",
-    },
-    apiRequestCount: {
-      type: Number,
-      default: 0,
-    },
-    monthlyRequestCount: {
-      type: Number,
-      default: 100, //100 credit //3 days
-    },
-    nextBillingDate: Date,
-    payments: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Payment",
-      },
-    ],
-    contentHistory: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "ContentHistory",
-      },
-    ],
+const User = sequelize.define('User', {
+  firstName: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
-);
+  lastName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  isEmailConfirmed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  confirmationToken: {
+    type: DataTypes.STRING,
+  },
+  confirmationTokenExpires: {
+    type: DataTypes.DATE,
+  },
+  trialPeriod: {
+    type: DataTypes.INTEGER,
+    defaultValue: 3, // 3 days
+  },
+  trialActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  trialExpires: {
+    type: DataTypes.DATE,
+  },
+  subscriptionPlan: {
+    type: DataTypes.ENUM('Trial', 'Free', 'Basic', 'Premium'),
+    defaultValue: 'Trial',
+  },
+  apiRequestCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  monthlyRequestCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 100, // 100 credit
+  },
+  nextBillingDate: {
+    type: DataTypes.DATE,
+  },
+}, {
+  timestamps: true,
+});
 
-//! Compile to form the model
-const User = mongoose.model("User", userSchema);
+// Define associations
+User.associate = (models) => {
+  User.hasMany(models.Payment, {
+    foreignKey: 'userId',
+    as: 'payments',
+  });
+  User.hasMany(models.ContentHistory, {
+    foreignKey: 'userId',
+    as: 'contentHistory',
+  });
+};
 
 module.exports = User;

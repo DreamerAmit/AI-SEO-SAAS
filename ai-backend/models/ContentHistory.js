@@ -1,23 +1,20 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const sequelize = require('../Config/database');
 
-//Schema
-const historySchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    content: {
-      type: String,
-      required: true,
-    },
+const ContentHistory = sequelize.define('ContentHistory', {
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
-  {
-    timestamps: true,
+  content: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  timestamp: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
   }
-);
-
-//! Compile to form the model
-const ContentHistory = mongoose.model("ContentHistory", historySchema);
+  // Add any other fields you had in your Mongoose model
+});
 
 module.exports = ContentHistory;

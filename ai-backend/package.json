@@ -28,7 +28,6 @@
     "express-async-handler": "^1.2.0",
     "jsonwebtoken": "^9.0.2",
     "mailgun-js": "^0.22.0",
-    "mongodb": "^6.9.0",
     "node-cron": "^3.0.3",
     "pg": "^8.13.0",
     "pg-hstore": "^2.3.4",

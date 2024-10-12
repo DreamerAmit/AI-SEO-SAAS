@@ -1,44 +1,17 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const sequelize = require('../Config/database');
 
-//Schema
-const paymentSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    reference: {
-      type: String,
-      required: true,
-    },
-    currency: {
-      type: String,
-      required: true,
-    },
-    status: {
-      type: String,
-      default: "pending",
-      required: true,
-    },
-    subscriptionPlan: {
-      type: String,
-      required: true,
-    },
-
-    amount: {
-      type: Number,
-      default: 0,
-    },
-    monthlyRequestCount: {
-      type: Number,
-    },
+const Payment = sequelize.define('Payment', {
+  // Define your payment fields here
+  amount: {
+    type: DataTypes.FLOAT,
+    allowNull: false
   },
-  {
-    timestamps: true,
-  }
-);
-
-//! Compile to form the model
-const Payment = mongoose.model("Payment", paymentSchema);
+  status: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  // Add other fields as needed
+});
 
 module.exports = Payment;

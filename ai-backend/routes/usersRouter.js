@@ -12,17 +12,19 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { sendConfirmationEmail } = require('../utils/emailSender');
+const db = require('../connectDB');
 
 const usersRouter = express.Router();
 
 // Add or update the registration route
-usersRouter.post("/register", async (req, res) => {
+usersRouter.post("/register", async (req, res, next) => {
+  console.log('Received registration request:', req.body);
   try {
     const { firstName, lastName, email, password } = req.body;
 
     // Check if user already exists
-    let user = await User.findOne({ email });
-    if (user) {
+    const userCheck = await db.query('SELECT * FROM "Users" WHERE email = $1', [email]);
+    if (userCheck.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
@@ -34,30 +36,22 @@ usersRouter.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new user
-    user = new User({
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-      confirmationToken,
-      confirmationTokenExpires: Date.now() + 24 * 60 * 60 * 1000, // Token expires in 24 hours
-    });
-
-    await user.save();
+    const newUser = await db.query(
+      'INSERT INTO "Users" ("firstName", "lastName", "email", "password") VALUES ($1, $2, $3, $4) RETURNING id, "firstName", "lastName", "email"',
+      [firstName, lastName, email, hashedPassword]
+    );
 
     console.log('Attempting to send confirmation email');
     await sendConfirmationEmail(email, confirmationToken);
     console.log('Confirmation email sent successfully');
 
-    res.status(201).json({status: "success", message: 'User registered successfully. Please check your email to confirm your account.' });
+    res.status(201).json({
+      status: "success",
+      message: 'User registered successfully',
+      user: newUser.rows[0]
+    });
   } catch (error) {
-    console.error('Registration error:', error);
-    if (error.message.includes('address not allowed')) {
-      return res.status(500).json({ 
-        message: 'Server error during registration', 
-        error: 'Email configuration error. Please check Mailgun settings.'
-      });
-    }
+    console.error('Detailed registration error:', error);
     res.status(500).json({ message: 'Server error during registration', error: error.message });
   }
 });
