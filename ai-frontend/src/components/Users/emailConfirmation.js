@@ -6,24 +6,30 @@ const ConfirmEmail = () => {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const { token } = useParams();
-  const API_BASE_URL = 'http://localhost:3000'; // Assuming this is the base URL for API requests
+  const API_BASE_URL = 'http://localhost:3001'; // Assuming this is the base URL for API requests
 
   useEffect(() => {
     let isMounted = true;
 
     const confirmEmail = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/users/confirm-email/${token}`);
-        if (isMounted) {
+        console.log('Sending confirmation request');
+        const res = await axios.get(`${API_BASE_URL}/api/v1/users/confirm-email/${token}`);
+        console.log('Received response:', res.data);
+        if (res.data.status === 'success') {
+          console.log('Setting success status');
           setStatus('success');
           setMessage(res.data.message);
+        } else {
+          console.log('Setting error status');
+          setStatus('error');
+          setMessage(res.data.message || 'An error occurred during email confirmation.');
         }
       } catch (error) {
-        if (isMounted) {
-          setStatus('error');
-          setMessage(error.response?.data?.message || 'An error occurred during email confirmation.');
-          console.error('Detailed error:', error.response?.data);
-        }
+        console.error('Confirmation error:', error);
+        console.error('Error response:', error.response?.data);
+        setStatus('error');
+        setMessage(error.response?.data?.message || 'An error occurred during email confirmation.');
       }
     };
 

@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { sendConfirmationEmail } = require('../utils/emailSender');
 const db = require('../connectDB');
+const jwt = require('jsonwebtoken');
 
 const usersRouter = express.Router();
 
@@ -31,14 +32,17 @@ usersRouter.post("/register", async (req, res, next) => {
     // Generate confirmation token
     const confirmationToken = crypto.randomBytes(20).toString('hex');
 
+    // Set expiration time for the token (e.g., 24 hours from now)
+    const confirmationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new user
     const newUser = await db.query(
-      'INSERT INTO "Users" ("firstName", "lastName", "email", "password") VALUES ($1, $2, $3, $4) RETURNING id, "firstName", "lastName", "email"',
-      [firstName, lastName, email, hashedPassword]
+      'INSERT INTO "Users" ("firstName", "lastName", "email", "password", "confirmationToken", "confirmationTokenExpires") VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, "firstName", "lastName", "email", "confirmationToken", "confirmationTokenExpires"',
+      [firstName, lastName, email, hashedPassword, confirmationToken, confirmationTokenExpires]
     );
 
     console.log('Attempting to send confirmation email');
@@ -59,60 +63,79 @@ usersRouter.post("/register", async (req, res, next) => {
 // Add the email confirmation route
 usersRouter.get("/confirm-email/:token", async (req, res) => {
   try {
+    
     const { token } = req.params;
     console.log('Received token:', token);
 
-    // Log all users with this token or confirmed email
-    const users = await User.find({
-      $or: [
-        { confirmationToken: token },
-        { isEmailConfirmed: true }
-      ]
-    });
+    // First, find the user with this token
+    const result = await db.query('SELECT * FROM "Users" WHERE "confirmationToken" = $1', [token]);
+    const user = result.rows[0];
 
-    console.log('Matching users:', users);
-
-    if (users.length === 0) {
+    if (!user) {
       console.log('No user found with this token');
       return res.status(400).json({ message: 'Invalid confirmation token' });
     }
 
-    const user = users[0];
-    console.log('User state:', {
-      id: user._id,
-      email: user.email,
-      isEmailConfirmed: user.isEmailConfirmed,
-      confirmationToken: user.confirmationToken,
-      confirmationTokenExpires: user.confirmationTokenExpires
-    });
-
     if (user.isEmailConfirmed) {
-      console.log('Account Confirmed');
-      return res.json({ status: "success", message: 'Account confirmed successfully, now click on Login button to continue' });
+      return res.json({ status: 'success', message: 'Email already confirmed' });
     }
 
-    if (user.confirmationTokenExpires && user.confirmationTokenExpires < Date.now()) {
-      console.log('Token expired');
-      return res.status(400).json({ message: 'Confirmation token has expired' });
-    }
+    res.json({ status: 'success', message: 'Email confirmed successfully' });
+    // If we've reached here, the token is valid and the email isn't confirmed yet
+    // Now we update the user
+    await db.query(
+      'UPDATE "Users" SET "isEmailConfirmed" = true, "confirmationToken" = NULL, "confirmationTokenExpires" = NULL WHERE id = $1',
+      [user.id]
+    );
 
-    user.isEmailConfirmed = true;
-    user.confirmationToken = undefined;
-    user.confirmationTokenExpires = undefined;
-
-    await user.save();
     console.log('User updated successfully');
-
-  //  res.json({ message: 'Email confirmed successfully' });
+    
   } catch (error) {
     console.error('Email confirmation error:', error);
     res.status(500).json({ message: 'Server error during email confirmation' });
   }
 });
 
-usersRouter.post("/login", login);
+usersRouter.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await db.query('SELECT * FROM "Users" WHERE email = $1', [email]);
+    const user = result.rows[0];
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    res.json({ status: "success", token, user: { id: user.id, email: user.email } });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 usersRouter.post("/logout", logout);
-usersRouter.get("/profile", isAuthenticated, userProfile);
+usersRouter.get("/profile", isAuthenticated, async (req, res) => {
+  try {
+    // Fetch user data from database
+    const result = await db.query('SELECT id, email, "firstName", "lastName", "subscriptionPlan", "monthlyRequestCount", "apiRequestCount", "nextBillingDate" FROM "Users" WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Fetch payment history
+    const paymentsResult = await db.query('SELECT * FROM "Payments" WHERE "id" = $1 ORDER BY "createdAt" DESC', [req.user.id]);
+    user.payments = paymentsResult.rows;
+
+    res.json({ user });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ message: "Error fetching user profile", error: error.message });
+  }
+});
 usersRouter.get("/auth/check", isAuthenticated, checkAuth);
 
 

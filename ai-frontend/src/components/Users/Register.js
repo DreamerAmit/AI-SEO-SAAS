@@ -8,6 +8,7 @@ import SuccessModal from "./SuccessModal";
 import { useAuth } from '../../AuthContext/AuthContext'; // Add this
 import { useNavigate, Link } from 'react-router-dom'; // Add this
 import axios from "axios";
+import LoadingSpinner from './LoadingSpinner'; // You'll need to create this component
 
 // Validation schema
 const validationSchema = Yup.object({
@@ -21,7 +22,8 @@ const validationSchema = Yup.object({
 
 const Registration = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-
+  // Remove the isLoading state as we'll use mutation.isPending
+  // const [isLoading, setLoading] = useState(false);
   //custom auth hook
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
@@ -36,6 +38,7 @@ const Registration = () => {
     mutationFn: registerAPI,
     onSuccess: (data) => {
       if (data.status === "success") {
+        // setLoading(false);
         setShowSuccessModal(true);
       } else {
         console.error("Registration failed", data);
@@ -88,7 +91,8 @@ const Registration = () => {
   console.log(mutation.isError);
   console.log(mutation.error);
   console.log(mutation);
-  return (
+
+  return (   
     <div className="min-h-screen flex items-center justify-center bg-gray-900 pt-20">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 m-4">
         {/* Google Sign-up button */}
@@ -239,9 +243,17 @@ const Registration = () => {
 
           <button
             type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 flex items-center justify-center"
+            disabled={mutation.isPending}
           >
-            Register
+            {mutation.isPending ? (
+              <>
+                <LoadingSpinner size="small" className="mr-2" />
+                <span>Registering...</span>
+              </>
+            ) : (
+              "Register"
+            )}
           </button>
         </form>
         <div className="text-sm mt-2 text-center">

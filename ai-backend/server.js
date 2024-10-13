@@ -12,6 +12,7 @@ const app = express();
 const allowedOrigins = ['http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'];
 
 app.use((req, res, next) => {
+  
   console.log('Incoming request:', req.method, req.url, 'from origin:', req.headers.origin);
   next();
 });

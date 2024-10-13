@@ -35,7 +35,7 @@ export const registerAPI = async (userData) => {
 
 export const loginAPI = async (userData) => {
   try {
-    const response = await axios.post('http://localhost:3000/api/v1/users/login', userData);
+    const response = await axios.post('http://localhost:3001/api/v1/users/login', userData);
     console.log("Raw API response:", response.data);
     return response.data;
   } catch (error) {
@@ -47,7 +47,7 @@ export const loginAPI = async (userData) => {
 
 export const checkUserAuthStatusAPI = async () => {
   const response = await axios.get(
-    "http://localhost:3000/api/v1/users/auth/check",
+    "http://localhost:3001/api/v1/users/auth/check",
     {
       withCredentials: true,
     }
@@ -58,7 +58,7 @@ export const checkUserAuthStatusAPI = async () => {
 
 export const logoutAPI = async () => {
   const response = await axios.post(
-    "http://localhost:3000/api/v1/users/logout",
+    "http://localhost:3001/api/v1/users/logout",
     {},
     {
       withCredentials: true,
@@ -69,24 +69,18 @@ export const logoutAPI = async () => {
 //=======Logout =====
 
 export const getUserProfileAPI = async () => {
-  const token = localStorage.getItem("token");
-  console.log("Token retrieved from localStorage:", token); // For debugging
-
-  if (!token) {
-    throw new Error("No token found. Please log in again.");
-  }
-
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-
   try {
-    const response = await axios.get("http://localhost:3000/api/v1/users/profile", config);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No token found');
+    }
+    const response = await axios.get( "http://localhost:3001/api/v1/users/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error) {
-    console.error("Error in getUserProfileAPI:", error);
     throw error;
   }
 };

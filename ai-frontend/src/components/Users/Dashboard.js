@@ -2,12 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { getUserProfileAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   //get the user profile
   const { isLoading, isError, data, error } = useQuery({
     queryFn: getUserProfileAPI,
     queryKey: ["profile"],
+    onError: (error) => {
+      if (error.response && error.response.status === 401) {
+        // Token is invalid or expired
+        localStorage.removeItem('token');
+        navigate('/login');
+      }
+    }
   });
 
   console.log("Dashboard query state:", { isLoading, isError, data, error });
