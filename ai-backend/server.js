@@ -12,8 +12,8 @@ const app = express();
 const allowedOrigins = ['http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'];
 
 app.use((req, res, next) => {
-  
-  console.log('Incoming request:', req.method, req.url, 'from origin:', req.headers.origin);
+  console.log(`Received ${req.method} request to ${req.url}`);
+  console.log('Request body:', req.body);
   next();
 });
 
@@ -107,4 +107,10 @@ app.use((err, req, res, next) => {
 
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is working' });
+});
+
+// Add this after your routes
+app.use((req, res, next) => {
+  console.log('No route matched.');
+  res.status(404).send('Not found');
 });

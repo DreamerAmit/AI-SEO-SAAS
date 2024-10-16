@@ -14,6 +14,7 @@ const User = require('../models/User');
 const { sendConfirmationEmail } = require('../utils/emailSender');
 const db = require('../connectDB');
 const jwt = require('jsonwebtoken');
+const scrapeController = require('../controllers/scrapeController');
 
 const usersRouter = express.Router();
 
@@ -138,5 +139,6 @@ usersRouter.get("/profile", isAuthenticated, async (req, res) => {
 });
 usersRouter.get("/auth/check", isAuthenticated, checkAuth);
 
+usersRouter.post('/scrape-and-generate', scrapeController.scrapeAndGenerate);
 
 module.exports = usersRouter;

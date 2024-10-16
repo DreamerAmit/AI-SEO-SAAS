@@ -10,10 +10,13 @@ const ScrapePage = () => {
   const handleScrape = async () => {
     setIsLoading(true);
     try {
-      //const response = await axios.post('/api/scrape-and-generate', { url });
-      // Navigate to the ScrapedImages page with the scraped images data
-     // navigate('/scraped-images', { state: { scrapedImages: response.data } });
-      navigate('/scraped-images');
+      const response = await axios.post('http://localhost:3001/api/v1/users/scrape-and-generate', { url });
+      if (Array.isArray(response.data) && response.data.length > 0) {
+        navigate('/scraped-images', { state: { scrapedImages: response.data, url } });
+      } else {
+        console.error('Unexpected response format or no images found:', response.data);
+        alert('No images found or unexpected response from server');
+      }
     } catch (error) {
       console.error('Error scraping page:', error);
       alert('Error scraping page. Please try again.');
