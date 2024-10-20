@@ -38,7 +38,7 @@ const ScrapePage = () => {
         <label className="block mb-4 mt-10">Web Page URL</label>  {/* Added margin-top */}
         <input
           type="text"
-          className="w-full p-2 border rounded"
+          className="w-full md:w-3/4 p-2 border rounded"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://example.com/gallery.html"

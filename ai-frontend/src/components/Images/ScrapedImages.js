@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const ScrapedImages = () => {
   const location = useLocation();
@@ -36,7 +37,15 @@ const ScrapedImages = () => {
   };
 
   const handleGenerateAltText = async () => {
-    console.log('Generating alt text for:', selectedImages);
+    try {
+      const response = await axios.post('http://localhost:3001/api/v1/images/generate-alt-text', { selectedImages });
+      const generatedImages = response.data;
+      
+      navigate('/images', { state: { generatedImages } });
+    } catch (error) {
+      console.error('Error generating alt text:', error);
+      alert('An error occurred while generating alt text. Please try again.');
+    }
   };
 
   const handleNewPageScrape = () => {

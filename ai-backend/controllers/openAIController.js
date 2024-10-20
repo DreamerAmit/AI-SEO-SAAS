@@ -12,7 +12,7 @@ const openAIController = asyncHandler(async (req, res) => {
     const response = await axios.post(
       "https://api.openai.com/v1/completions",
       {
-        model: "gpt-3.5-turbo-instruct",
+        model: "gpt-4o-mini",
         prompt,
         max_tokens: 600,
       },

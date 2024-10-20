@@ -5,6 +5,9 @@ const { connectDB, query } = require('./connectDB');
 const userRoutes = require('./routes/usersRouter');
 const sequelize = require('./Config/database');
 const { Pool } = require('pg');
+const openAIRouter = require('./routes/openAIRouter');
+const imageRouter = require('./routes/imageRouter');
+// const scrapeRouter = require('./routes/scrapeRouter');
 
 const app = express();
 
@@ -12,8 +15,9 @@ const app = express();
 const allowedOrigins = ['http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'];
 
 app.use((req, res, next) => {
-  console.log(`Received ${req.method} request to ${req.url}`);
+  console.log(`Received ${req.method} request to ${req.path}`);
   console.log('Request body:', req.body);
+  console.log('CORS origin:', req.get('origin'));
   next();
 });
 
@@ -50,6 +54,8 @@ app.get('/api/db-test', async (req, res) => {
 
 // Routes come after middleware
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/openai', openAIRouter);
+app.use('/api/v1/images', imageRouter);
 
 // PostgreSQL connection setup
 const pool = new Pool({
@@ -109,8 +115,11 @@ app.get('/test', (req, res) => {
   res.json({ message: 'Server is working' });
 });
 
-// Add this after your routes
+// Catch-all for unmatched routes
 app.use((req, res, next) => {
-  console.log('No route matched.');
-  res.status(404).send('Not found');
+  console.log(`No route matched for ${req.method} ${req.url}`);
+  res.status(404).send('Not Found');
 });
+
+
+// app.use('/api/scrape', scrapeRouter);

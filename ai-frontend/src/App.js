@@ -23,6 +23,7 @@ import Help from './components/Help/Help';
 import ConfirmEmail from './components/Users/EmailConfirmation';
 import ScrapePage from './components/Images/ScrapePage';  
 import ScrapedImages from './components/Images/ScrapedImages';
+
 export default function App() {
   //custom auth hook
   const { isAuthenticated } = useAuth();
