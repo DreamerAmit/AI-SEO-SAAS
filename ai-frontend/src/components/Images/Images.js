@@ -12,13 +12,13 @@ const Images = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
+  const [itemsPerPage, setItemsPerPage] = useState(25); // New state for items per page
+  const [currentPage, setCurrentPage] = useState(1); // New state for current page
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchImages();
   }, []);
-
- 
 
   const fetchImages = async () => {
     try {
@@ -30,7 +30,7 @@ const Images = () => {
       const response = await axios.get('/api/v1/images/altText', {
         params: { userId: userId }
       });
-      setImages(response.data); // Ensure this is an array
+      setImages(response.data);
     } catch (error) {
       console.error('Error fetching images:', error);
       setError('Failed to fetch images. Please try again later.');
@@ -38,6 +38,13 @@ const Images = () => {
       setLoading(false);
     }
   };
+
+  const handleItemsPerPageChange = (event) => {
+    setItemsPerPage(Number(event.target.value));
+    setCurrentPage(1); // Reset to first page when items per page changes
+  };
+
+  const paginatedImages = images.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleSearch = () => {
     // Implement search functionality
@@ -155,10 +162,13 @@ const Images = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {Array.isArray(images) && images.length > 0 ? (
-              images.map((image, index) => (
+            {Array.isArray(paginatedImages) && paginatedImages.length > 0 ? (
+              paginatedImages.map((image, index) => (
                 <tr key={image.id || index} className="hover:bg-gray-100">
-                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-black">
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-black text-center align-middle">
+                    {index + 1 + (currentPage - 1) * itemsPerPage} {/* Adjust index for pagination */}
+                  </td>
+                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-black text-center align-middle">
                     <input 
                       type="checkbox"
                       checked={selectedImages.includes(image.id)}
@@ -166,9 +176,8 @@ const Images = () => {
                       className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
                     />
                   </td>
-                 
-                  <td className="px-6 py-3 text-sm text-black">{image.src}</td>
-                  <td className="px-6 py-3 text-sm text-black word-wrap:break-words">{image.alt_text}</td>
+                  <td className="px-6 py-3 text-sm text-black align-middle">{image.src}</td>
+                  <td className="px-6 py-3 text-sm text-black word-wrap:break-words align-middle">{image.alt_text}</td>
                 </tr>
               ))
             ) : (
@@ -178,6 +187,14 @@ const Images = () => {
             )}
           </tbody>
         </table>
+        <div className="flex justify-end p-4">
+          <label htmlFor="itemsPerPage" className="mr-2">Items per page:</label>
+          <select id="itemsPerPage" value={itemsPerPage} onChange={handleItemsPerPageChange} className="border border-gray-300 rounded px-2 py-1">
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
       </div>
     </div>
   );
