@@ -44,6 +44,14 @@ const Images = () => {
     setCurrentPage(1); // Reset to first page when items per page changes
   };
 
+  const handleSelectAllChange = (event) => {
+    if (event.target.checked) {
+      setSelectedImages(paginatedImages.map(image => image.id));
+    } else {
+      setSelectedImages([]);
+    }
+  };
+
   const paginatedImages = images.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleSearch = () => {
@@ -156,7 +164,15 @@ const Images = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider"></th>
+              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">#</th>
+              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
+                <input 
+                  type="checkbox"
+                  onChange={handleSelectAllChange}
+                  checked={selectedImages.length === paginatedImages.length && paginatedImages.length > 0}
+                  className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
+                />
+              </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">URL</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Alt Text</th>
             </tr>
