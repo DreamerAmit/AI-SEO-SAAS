@@ -20,7 +20,7 @@ imageRouter.use((req, res, next) => {
 
 imageRouter.post('/generate-alt-text', async (req, res) => {
   console.log('Received request to generate alt text');
-  const { selectedImages } = req.body;
+  const { selectedImages, userId } = req.body; // Assume userId is sent in the request
 
   try {
     const generatedImages = await Promise.all(selectedImages.map(async (image) => {
@@ -53,9 +53,9 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
       try {
         console.log('Inserting into database:', image.src, altText);
         const result = await db.query(
-          'INSERT INTO "images" ("src", "alt_text") VALUES (:src, :altText) RETURNING id, "src", "alt_text"',
+          'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
           {
-            replacements: { src: image.src, altText: altText },
+            replacements: { src: image.src, altText: altText, userId: userId },
             type: QueryTypes.INSERT
           }
         );
@@ -81,25 +81,59 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
   }
 });
 
+
 // New GET route to fetch all images
 imageRouter.get("/altText", async (req, res) => {
+  const userId = req.query.userId;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
   try {
-    const result = await db.query('SELECT * FROM images');
+    const result = await db.query(
+      'SELECT * FROM images WHERE user_id = :userId ORDER BY 1 DESC',
+      {
+        replacements: { userId: userId },
+        type: QueryTypes.SELECT
+      }
+    );
     console.log('Database query result:', result);
-    
-    // Check if result is an array (as in your current output)
-    if (Array.isArray(result) && result.length > 0 && Array.isArray(result[0])) {
-      res.json(result[0]);  // Send the first element of the array
-    } else if (result && result.rows) {
-      // This is the typical structure we expect from pg
-      res.json(result.rows);
-    } else {
-      console.error('Unexpected result structure:', result);
-      res.status(500).json({ error: 'Unexpected result structure from database' });
-    }
+
+    // Send the result array directly
+    res.json(result);
   } catch (error) {
     console.error('Error fetching images:', error);
     res.status(500).json({ error: 'An error occurred while fetching images' });
+  }
+});
+
+// Add this new route to the existing file
+imageRouter.delete('/altText', async (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'Invalid or empty array of ids' });
+  }
+
+  try {
+    console.log('Executing SQL query with ids:', ids); // Moved this line outside of db.query
+    const result = await db.query(
+      'DELETE FROM images WHERE id IN (:ids) RETURNING *',
+      {
+        replacements: { ids: ids },
+        type: QueryTypes.DELETE
+      }
+    );
+
+    if (result[1] === 0) { // Changed from result.rowCount to result[1]
+      return res.status(404).json({ error: 'No images found with the provided ids' });
+    }
+
+    res.json({ message: `${result[1]} image(s) deleted successfully` }); // Changed from result.rowCount to result[1]
+  } catch (error) {
+    console.error('Error deleting images:', error);
+    res.status(500).json({ error: 'An error occurred while deleting images' });
   }
 });
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getUserId } from '../../AuthContext/AuthContext';
 
 const ScrapedImages = () => {
   const location = useLocation();
@@ -36,9 +37,10 @@ const ScrapedImages = () => {
     setSelectedImages(scrapedImages.filter(img => !img.alt));
   };
 
+
   const handleGenerateAltText = async () => {
     try {
-      const response = await axios.post('http://localhost:3001/api/v1/images/generate-alt-text', { selectedImages });
+      const response = await axios.post('http://localhost:3001/api/v1/images/generate-alt-text', { selectedImages, userId: getUserId() });
       const generatedImages = response.data;
       
       navigate('/images', { state: { generatedImages } });

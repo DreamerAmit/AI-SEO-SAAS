@@ -3,6 +3,8 @@ import axios from 'axios';
 import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport } from 'react-icons/fa';
 import { BsClipboard } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
+import { getUserId } from '../../AuthContext/AuthContext';
 
 const Images = () => {
   const [images, setImages] = useState([]);
@@ -16,11 +18,19 @@ const Images = () => {
     fetchImages();
   }, []);
 
+ 
+
   const fetchImages = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/v1/images/altText');
-      setImages(response.data);
+      const userId = getUserId();
+      if (!userId) {
+        throw new Error('User ID is not available');
+      }
+      const response = await axios.get('/api/v1/images/altText', {
+        params: { userId: userId }
+      });
+      setImages(response.data); // Ensure this is an array
     } catch (error) {
       console.error('Error fetching images:', error);
       setError('Failed to fetch images. Please try again later.');
@@ -33,8 +43,29 @@ const Images = () => {
     // Implement search functionality
   };
 
-  const handleDelete = () => {
-    // Implement delete functionality
+  const handleDelete = async () => {
+    if (selectedImages.length === 0) return;
+
+    try {
+      console.log('Sending delete request...');
+      const response = await axios.delete('/api/v1/images/altText', { 
+        data: { ids: selectedImages },
+        withCredentials: true
+      });
+      console.log('Delete response:', response);
+
+      // Remove deleted images from the state
+      setImages(prevImages => prevImages.filter(image => !selectedImages.includes(image.id)));
+      // Clear selected images
+      setSelectedImages([]);
+      // Show success message (you can implement a toast notification here)
+      alert('Selected images deleted successfully');
+    } catch (error) {
+      console.error('Error deleting images:', error);
+      console.error('Error response:', error.response);
+      // Show error message
+      alert('Failed to delete images. Please try again.');
+    }
   };
 
   const handleCheckboxChange = (id) => {
@@ -45,6 +76,24 @@ const Images = () => {
 
   const handleScrapePageClick = () => {
     navigate('/scrape');
+  };
+
+  const handleExport = () => {
+    const dataToExport = selectedImages.length > 0
+      ? images.filter(image => selectedImages.includes(image.id))
+      : images;
+
+    const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(
+      dataToExport.map((image, index) => ({
+        'Sr No': index + 1,
+        'URL': image.src,
+        'AltText': image.alt_text
+      }))
+    );
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Images');
+    XLSX.writeFile(workbook, 'exported_images.xlsx');
   };
 
   if (loading) return <div>Loading...</div>;
@@ -61,7 +110,10 @@ const Images = () => {
           <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleScrapePageClick}>
             <BsClipboard className="mr-2" /> Scrape Page
           </button>
-          <button className="bg-white text-black px-4 py-2 rounded border border-gray-300 flex items-center">
+          <button 
+            className="bg-white text-black px-4 py-2 rounded border border-gray-300 flex items-center"
+            onClick={handleExport}
+          >
             <FaFileExport className="mr-2" /> Export
           </button>
         </div>

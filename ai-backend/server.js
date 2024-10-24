@@ -14,25 +14,21 @@ const app = express();
 // CORS configuration
 const allowedOrigins = ['http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000'];
 
-app.use((req, res, next) => {
-  console.log(`Received ${req.method} request to ${req.path}`);
-  console.log('Request body:', req.body);
-  console.log('CORS origin:', req.get('origin'));
-  next();
-});
-
 app.use(cors({
   origin: function(origin, callback) {
-    console.log('CORS origin:', origin);
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
+    console.log('Request origin:', origin);
+    callback(null, true); // Allow all origins temporarily
   },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicitly allow all methods
   credentials: true
 }));
+
+// Add this middleware to log all incoming requests
+app.use((req, res, next) => {
+  console.log(`${req.method} request to ${req.path}`);
+  console.log('Headers:', req.headers);
+  next();
+});
 
 app.use(express.json());
 

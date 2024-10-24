@@ -19,7 +19,7 @@ const Login = () => {
         loginUser({
           token: data.token,
           user: {
-            id: data.user._id,
+            id: data.user.id,
             username: data.user.username,
             email: data.user.email
           }
