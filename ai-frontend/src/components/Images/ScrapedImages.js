@@ -9,6 +9,8 @@ const ScrapedImages = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [scrapedImages, setScrapedImages] = useState([]);
   const [url, setUrl] = useState('');
+  const [chatGptPrompt, setChatGptPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (location.state?.scrapedImages) {
@@ -37,16 +39,26 @@ const ScrapedImages = () => {
     setSelectedImages(scrapedImages.filter(img => !img.alt));
   };
 
+  const handlePromptChange = (event) => {
+    setChatGptPrompt(event.target.value);
+  };
 
   const handleGenerateAltText = async () => {
     try {
-      const response = await axios.post('http://localhost:3001/api/v1/images/generate-alt-text', { selectedImages, userId: getUserId() });
+      setIsGenerating(true);
+      const response = await axios.post('http://localhost:3001/api/v1/images/generate-alt-text', {
+        selectedImages,
+        userId: getUserId(),
+        chatGptPrompt
+      });
       const generatedImages = response.data;
       
       navigate('/images', { state: { generatedImages } });
     } catch (error) {
       console.error('Error generating alt text:', error);
       alert('An error occurred while generating alt text. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -61,7 +73,7 @@ const ScrapedImages = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Select Images to Process</h1>
+        <h1 className="text-2xl font-bold">Select Images to Generate AltText</h1>
         <button
           className="bg-indigo-600 text-white px-4 py-2 rounded"
           onClick={handleNewPageScrape}
@@ -77,13 +89,13 @@ const ScrapedImages = () => {
       </div>
 
       <div className="flex justify-between items-center mb-4">
-        <button className="text-indigo-600 underline">Jump to bottom</button>
+        {/* <button className="text-indigo-600 underline">Jump to bottom</button>
         <div>
           <span className="mr-2">Select:</span>
           <button className="text-indigo-600 underline mr-2" onClick={handleSelectAll}>All</button>
           <button className="text-indigo-600 underline mr-2" onClick={handleSelectNone}>None</button>
           <button className="text-indigo-600 underline" onClick={handleSelectMissingAltText}>Missing alt text</button>
-        </div>
+        </div> */}
       </div>
 
       <table className="w-full border-collapse border">
@@ -122,7 +134,7 @@ const ScrapedImages = () => {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Alt Text generation options</h2>
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label className="block mb-2">Alt Text Language</label>
           <select className="border p-2 w-full max-w-xs">
             <option>English</option>
@@ -141,33 +153,61 @@ const ScrapedImages = () => {
             SEO Keywords
           </label>
           <p className="text-sm text-gray-600">Include SEO keywords in the generated alt text for the selected images.</p>
-        </div>
+        </div> */}
         <div className="mb-4">
-          <label className="flex items-center">
-            <input type="checkbox" className="mr-2" />
-            ChatGPT Modification
+          <label htmlFor="chatGptPrompt" className="block text-lg font-medium text-gray-700 mb-2">
+            ChatGPT Modification (optional)
           </label>
-          <p className="text-sm text-gray-600">Use your own ChatGPT prompt on the alt text.</p>
+          <textarea
+            id="chatGptPrompt"
+            name="chatGptPrompt"
+            value={chatGptPrompt}
+            onChange={handlePromptChange}
+            placeholder="for eg: Generate alt text for the followng images with a name of the product"
+            rows="4"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          ></textarea>
+          <p className="mt-2 text-sm text-gray-600">Use your own prompt to advice ChatGPT on how to generate alt text.</p>
         </div>
-        <div className="mb-4">
+        {/* <div className="mb-4">
           <label className="flex items-center">
             <input type="checkbox" className="mr-2" />
             Overwrite existing
           </label>
-        </div>
+        </div> */}
         <button
-          className="bg-indigo-600 text-white px-4 py-2 rounded"
+          className={`bg-indigo-600 text-white px-4 py-2 rounded ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleGenerateAltText}
-          disabled={selectedImages.length === 0}
+          disabled={selectedImages.length === 0 || isGenerating}
         >
-          Generate Alt Text for selected
+          {isGenerating ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Generating...
+            </>
+          ) : (
+            'Generate Alt Text for selected'
+          )}
         </button>
       </div>
 
       <div className="mt-8 bg-green-100 border-l-4 border-green-500 p-4">
         <h3 className="font-bold">Note</h3>
-        <p>When you generate alt text for scraped images, they will be processed in the background and added to your library when done. Some images may not be processed if they are an unsupported file type or are unable to be downloaded. Page scrapes are limited to a maximum of 512 images.</p>
+        <p>When you generate alt text for scraped images, they will be processed in the background and added to your library when done. Some images may not be processed if they are an unsupported file type or are unable to be downloaded. Page scrapes are limited to a maximum of 200 images.</p>
       </div>
+
+      {isGenerating && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
+          <div className="bg-white p-5 rounded-lg flex flex-col items-center">
+            <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+            <h2 className="text-center text-xl font-semibold">Generating Alt Text...</h2>
+            <p className="text-center">This may take a few moments.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

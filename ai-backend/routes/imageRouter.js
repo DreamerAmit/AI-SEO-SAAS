@@ -20,7 +20,7 @@ imageRouter.use((req, res, next) => {
 
 imageRouter.post('/generate-alt-text', async (req, res) => {
   console.log('Received request to generate alt text');
-  const { selectedImages, userId } = req.body; // Assume userId is sent in the request
+  const { selectedImages, userId, chatGptPrompt } = req.body; // Add chatGptPrompt here
 
   try {
     const generatedImages = await Promise.all(selectedImages.map(async (image) => {
@@ -32,19 +32,23 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
           {
             role: "user",
             content: [
-              { type: "text", text: "Generate a 50-word alt text for this image:" },
+              { 
+                type: "text", 
+                text: `Generate a 50-word alt text for this image by following the prompt: ${chatGptPrompt}`
+                
+              },
               { type: "image_url", image_url: { url: image.src } }
             ],
           },
         ],
-        max_tokens: 300,
+        max_tokens: 500,
       }, {
         headers: {
           'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
           'Content-Type': 'application/json'
         }
       });
-
+      console.log(chatGptPrompt);
       const altText = openAIResponse.data.choices[0].message.content.trim();
       console.log('Image source:', image.src);
       console.log('Generated AltText:',altText);

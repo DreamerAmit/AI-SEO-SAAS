@@ -23,6 +23,7 @@ import Help from './components/Help/Help';
 import ConfirmEmail from './components/Users/EmailConfirmation';
 import ScrapePage from './components/Images/ScrapePage';  
 import ScrapedImages from './components/Images/ScrapedImages';
+import './App.css';  // or wherever your global CSS file is located
 
 export default function App() {
   //custom auth hook
