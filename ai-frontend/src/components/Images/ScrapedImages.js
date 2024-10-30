@@ -6,6 +6,7 @@ import { getUserId } from '../../AuthContext/AuthContext';
 const ScrapedImages = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [remainingCredits, setRemainingCredits] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [scrapedImages, setScrapedImages] = useState([]);
   const [url, setUrl] = useState('');
@@ -20,6 +21,50 @@ const ScrapedImages = () => {
       setUrl(location.state.url);
     }
   }, [location.state]);
+
+  // Fetch remaining credits when component mounts
+  useEffect(() => {
+    fetchRemainingCredits();
+  }, []);
+
+  // Function to fetch remaining credits
+  const fetchRemainingCredits = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Add debug logs
+      console.log('Token exists:', !!token);
+      console.log('Token value:', token?.substring(0, 20) + '...'); // Show first 20 chars for safety
+      
+      if (!token) {
+        navigate('/login'); // Redirect to login if no token
+        return;
+      }
+
+      const response = await axios.get('http://localhost:3001/api/v1/credits/remaining', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data.success) {
+        console.log('Remaining credits:', response.data.imageCredits);
+        setRemainingCredits(response.data.imageCredits);
+      }
+    } catch (error) {
+      console.error('Auth Error Details:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        error: error.message
+      });
+      
+      // If unauthorized, redirect to login
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
+    }
+  };
 
   const handleImageSelect = (image) => {
     setSelectedImages(prev => 
@@ -43,20 +88,67 @@ const ScrapedImages = () => {
     setChatGptPrompt(event.target.value);
   };
 
+  // Handle alt text generation
   const handleGenerateAltText = async () => {
+    // Validate credit availability
+    if (remainingCredits === null) {
+      alert('Unable to determine remaining credits. Please refresh the page.');
+      return;
+    }
+
+    if (selectedImages.length > remainingCredits) {
+      alert(`You only have ${remainingCredits} credits remaining. Please select fewer images.`);
+      return;
+    }
+
     try {
       setIsGenerating(true);
-      const response = await axios.post('http://localhost:3001/api/v1/images/generate-alt-text', {
-        selectedImages,
-        userId: getUserId(),
-        chatGptPrompt
-      });
-      const generatedImages = response.data;
-      
-      navigate('/images', { state: { generatedImages } });
+
+      // First generate the alt text
+      const altTextResponse = await axios.post(
+        'http://localhost:3001/api/v1/images/generate-alt-text',
+        {
+          selectedImages,
+          userId: getUserId(),
+          chatGptPrompt
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      // If alt text generation was successful, deduct credits
+      if (altTextResponse.data) {
+        const creditResponse = await axios.post(
+          'http://localhost:3001/api/v1/credits/deduct',
+          {
+            usedCredits: selectedImages.length
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+          }
+        );
+
+        if (creditResponse.data.success) {
+          // Update local state with new credit count
+          setRemainingCredits(creditResponse.data.remainingCredits);
+          
+          // Navigate to results
+          navigate('/images', { 
+            state: { 
+              generatedImages: altTextResponse.data,
+              message: creditResponse.data.message 
+            } 
+          });
+        }
+      }
     } catch (error) {
-      console.error('Error generating alt text:', error);
-      alert('An error occurred while generating alt text. Please try again.');
+      console.error('Error:', error);
+      alert(error.response?.data?.message || 'An error occurred. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -87,6 +179,25 @@ const ScrapedImages = () => {
         <a href={url} className="text-blue-600 hover:underline">{url}</a>
         <p>Total Scraped Images: {scrapedImages.length} | Images Missing Alt Text: {scrapedImages.filter(img => !img.alt).length}</p>
       </div>
+
+      {/* Credits Display */}
+      {remainingCredits !== null && (
+        <div className="bg-blue-100 border-l-4 border-blue-500 p-4 mb-4">
+          <p className="font-semibold text-red-600">
+            You have {remainingCredits} image {remainingCredits === 1 ? 'credit' : 'credits'} remaining
+          </p>
+        </div>
+      )}
+
+      {/* Warning if selected images exceed credits - Moved here */}
+      {remainingCredits !== null && selectedImages.length > remainingCredits && (
+        <div className="bg-red-100 border-l-4 border-red-500 p-4 mb-4">
+          <p className="text-red-700">
+            You have selected {selectedImages.length} images but only have {remainingCredits} credits remaining. 
+            Please adjust your selection or upgrade your plan.
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-between items-center mb-4">
         {/* <button className="text-indigo-600 underline">Jump to bottom</button>

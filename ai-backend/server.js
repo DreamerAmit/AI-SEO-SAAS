@@ -7,6 +7,7 @@ const sequelize = require('./Config/database');
 const { Pool } = require('pg');
 const openAIRouter = require('./routes/openAIRouter');
 const imageRouter = require('./routes/imageRouter');
+const creditRoutes = require('./routes/creditRoutes');
 // const scrapeRouter = require('./routes/scrapeRouter');
 
 const app = express();
@@ -52,6 +53,7 @@ app.get('/api/db-test', async (req, res) => {
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/openai', openAIRouter);
 app.use('/api/v1/images', imageRouter);
+app.use('/api/v1/credits', creditRoutes);
 
 // PostgreSQL connection setup
 const pool = new Pool({
