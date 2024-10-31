@@ -121,7 +121,7 @@ usersRouter.post("/logout", logout);
 usersRouter.get("/profile", isAuthenticated, async (req, res) => {
   try {
     // Fetch user data from database
-    const result = await db.query('SELECT id, email, "firstName", "lastName", "subscriptionPlan", "monthlyRequestCount", "apiRequestCount", "nextBillingDate" FROM "Users" WHERE id = $1', [req.user.id]);
+    const result = await db.query('SELECT (SELECT COUNT(*) FROM "images" WHERE "user_id" = "Users"."id") As "imagecount","id", email, "firstName", "lastName", "subscriptionPlan", "monthlyRequestCount", "apiRequestCount", "image_credits" FROM "Users" WHERE id = $1', [req.user.id]);
     const user = result.rows[0];
 
     if (!user) {

@@ -42,8 +42,7 @@ export default function Home() {
                 Quick AI Alt Text Generator
               </h1>
               <p className="mt-6 text-lg leading-8 text-gray-300">
-                Upload images and generate alt text for them using AI. Improve
-                your site's SEO and accessibility with our AI Alt Text Generator.
+                Scrape Pages of your website, Generate Alt Text for Images using AI, Apply Alt Text to Images and improve your site's SEO  and accessibility.
               </p>
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link

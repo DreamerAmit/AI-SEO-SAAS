@@ -40,7 +40,7 @@ const Dashboard = () => {
     return (
       <div className="mx-auto p-4 bg-gray-900 w-screen">
         <h1 className="text-3xl font-bold text-center mb-8 text-green-600">
-          Welcome, Amit
+          Welcome, {data?.user?.firstName || data?.user?.username || 'User'}
         </h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -59,7 +59,7 @@ const Dashboard = () => {
                   className="border rounded w-full py-2 px-3 text-gray-700 leading-tight"
                   id="username"
                 >
-                  {data?.user?.username}
+               {`${data?.user?.firstName || ''} ${data?.user?.lastName || ''}`.trim()}
                 </p>
               </div>
               <div className="mb-4">
@@ -83,20 +83,20 @@ const Dashboard = () => {
           <div className="mb-6 bg-white p-4 shadow rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Credit Usage</h2>
             <div>
-              <p className="mb-4">
+              {/* <p className="mb-4">
                 Monthly Credit: {data?.user?.monthlyRequestCount}
-              </p>
-              <p className="mb-4">Credit Used: {data?.user?.apiRequestCount}</p>
+              </p> 
+              <p className="mb-4">Credit Used: {data?.user?.apiRequestCount}</p>*/}
               <p className="mb-4">
                 Credit Remaining:{" "}
-                {data?.user?.monthlyRequestCount - data?.user?.apiRequestCount}
+                {data?.user?.image_credits}
               </p>
-              <p className="mb-4">
+              {/* <p className="mb-4">
                 Next Billing Date:{" "}
                 {data?.user?.nextBillingDate
                   ? data?.user?.nextBillingDate
                   : "No Billing date"}
-              </p>
+              </p> */}
             </div>
           </div>
 
@@ -107,11 +107,11 @@ const Dashboard = () => {
               <p className="mb-4">
                 Current Plan: {data?.user?.subscriptionPlan}
               </p>
-              {data?.user?.subscriptionPlan === "Trial" && (
+              {/* {data?.user?.subscriptionPlan === "Trial" && (
                 <p className="border mb-2 rounded w-full py-2 px-3 text-gray-700 leading-tight">
                   Trial: 1000 monthly request
                 </p>
-              )}
+              )} */}
 
               {data?.user?.subscriptionPlan === "Free" && (
                 <p className="border mb-2 rounded w-full py-2 px-3 text-gray-700 leading-tight">
@@ -140,23 +140,16 @@ const Dashboard = () => {
           {/* Trial Information Section */}
           <div className="mb-6 bg-white p-4 shadow rounded-lg">
             <h2 className="text-xl font-semibold mb-4">Images with AltText in your Library</h2>
-            <div className="flex flex-col h-full">
-              <p className="mb-4">
-                Count:{" 5"}
-                {/* {data?.user?.trialActive ? (
-                  <span className="text-green-500">Active</span>
-                ) : (
-                  <span className="text-yellow-600">Inactive</span>
-                )} */}
+            <div className="flex flex-col">
+              <p className="mb-2">
+                Count: {data?.user?.imagecount}
               </p>
-              <div className="mt-11">
-                <Link
-                  to="/plans"
-                  className=" py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  View All
-                </Link>
-              </div>
+              <Link
+                to="/images"
+                className="w-32 text-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                View All
+              </Link>
             </div>
           </div>
 

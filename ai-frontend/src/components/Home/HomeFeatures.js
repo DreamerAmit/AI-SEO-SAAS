@@ -45,10 +45,10 @@ export default function HomeFeatures() {
                       </div>
                       <div className="max-w-lg">
                         <h4 className="text-3xl font-medium text-white mb-8">
-                          1. Upload Image
+                          1. Scrape website pages for images
                         </h4>
                         <p className="text-xl text-gray-400">
-                          Upload single or multiple images at once in your admin dashboard. 
+                          Scrape website pages for images and generate alt text for them.
                         </p>
                       </div>
                     </div>
@@ -74,7 +74,7 @@ export default function HomeFeatures() {
                           3. Your Alt Text is ready!
                         </h4>
                         <p className="text-xl text-gray-400">
-                          The Alt Text is ready to be used and you can either copy or download it.
+                          The Alt Text is ready to be used and you can either copy or download it. Apply Alt Text to Images and improve your site's SEO and accessibility.
                         </p>
                       </div>
                     </div>
