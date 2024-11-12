@@ -50,7 +50,7 @@ const CheckoutForm = () => {
           elements,
           clientSecret: mutation?.data?.clientSecret,
           confirmParams: {
-            return_url: "http://localhost:3002/success",
+            return_url: `${process.env.REACT_APP_API_URL}/success`,
           },
         });
         if (error) {

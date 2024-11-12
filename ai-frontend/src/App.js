@@ -15,7 +15,7 @@ import FreePlanSignup from "./components/StripePayment/FreePlanSignup";
 import CheckoutForm from "./components/StripePayment/CheckoutForm";
 import PaymentSuccess from "./components/StripePayment/PaymentSuccess";
 import ContentGenerationHistory from "./components/ContentGeneration/ContentHistory";
-import AppFeatures from "./components/Features/Features";
+import AppFeatures from "./components/Support/Support";
 import AboutUs from "./components/About/About";
 import Images from './components/Images/Images';
 import AccountPage from './components/Account/Account';
@@ -80,7 +80,7 @@ export default function App() {
             }
           />
           <Route path="/success" element={<PaymentSuccess />} />
-          <Route path="/features" element={<AppFeatures />} />
+          <Route path="/support" element={<AppFeatures />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/images" element={<Images />} /> 
           <Route path="/scrape" element={<ScrapePage />} />

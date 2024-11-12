@@ -14,7 +14,7 @@ const ConfirmEmail = () => {
     const confirmEmail = async () => {
       try {
         console.log('Sending confirmation request');
-        const res = await axios.get(`${API_BASE_URL}/api/v1/users/confirm-email/${token}`);
+        const res = await axios.get(`${process.env.REACT_APP_API_URL}/users/confirm-email/${token}`);
         console.log('Received response:', res.data);
         if (res.data.status === 'success') {
           console.log('Setting success status');

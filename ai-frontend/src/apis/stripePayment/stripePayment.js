@@ -3,7 +3,7 @@ import axios from "axios";
 
 export const handleFreeSubscriptionAPI = async () => {
   const response = await axios.post(
-    "http://localhost:3001/api/v1/stripe/free-plan",
+    `${process.env.REACT_APP_API_URL}/stripe/free-plan`,
     {},
     {
       withCredentials: true,
@@ -16,7 +16,7 @@ export const handleFreeSubscriptionAPI = async () => {
 export const createStripePaymentIntentAPI = async (payment) => {
   console.log(payment);
   const response = await axios.post(
-    "http://localhost:3001/api/v1/stripe/checkout",
+    `${process.env.REACT_APP_API_URL}/stripe/checkout`,
     {
       amount: Number(payment?.amount),
       subscriptionPlan: payment?.plan,
@@ -31,7 +31,7 @@ export const createStripePaymentIntentAPI = async (payment) => {
 
 export const verifyPaymentAPI = async (paymentId) => {
   const response = await axios.post(
-    `http://localhost:3001/api/v1/stripe/verify-payment/${paymentId}`,
+    `${process.env.REACT_APP_API_URL}/stripe/verify-payment/${paymentId}`,
     {},
     {
       withCredentials: true,

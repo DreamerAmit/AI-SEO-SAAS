@@ -5,7 +5,7 @@ export const registerAPI = async (userData) => {
   console.log('Starting registration request', userData);
   try {
     const response = await axios.post(
-      "http://localhost:3001/api/v1/users/register",
+      `${process.env.REACT_APP_API_URL}/users/register`,
       userData,
       {
         withCredentials: true
@@ -35,7 +35,7 @@ export const registerAPI = async (userData) => {
 
 export const loginAPI = async (userData) => {
   try {
-    const response = await axios.post('http://localhost:3001/api/v1/users/login', userData);
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/users/login`, userData);
     console.log("Raw API response:", response.data);
     return response.data;
   } catch (error) {
@@ -47,7 +47,7 @@ export const loginAPI = async (userData) => {
 
 export const checkUserAuthStatusAPI = async () => {
   const response = await axios.get(
-    "http://localhost:3001/api/v1/users/auth/check",
+    `${process.env.REACT_APP_API_URL}/users/auth/check`,
     {
       withCredentials: true,
     }
@@ -58,7 +58,7 @@ export const checkUserAuthStatusAPI = async () => {
 
 export const logoutAPI = async () => {
   const response = await axios.post(
-    "http://localhost:3001/api/v1/users/logout",
+    `${process.env.REACT_APP_API_URL}/users/logout`,
     {},
     {
       withCredentials: true,
@@ -74,7 +74,7 @@ export const getUserProfileAPI = async () => {
     if (!token) {
       throw new Error('No token found');
     }
-    const response = await axios.get( "http://localhost:3001/api/v1/users/profile", {
+    const response = await axios.get(`${process.env.REACT_APP_API_URL}/users/profile`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -87,7 +87,7 @@ export const getUserProfileAPI = async () => {
 
 export const googleSignInAPI = async (tokenId) => {
   try {
-    const response = await axios.post('/api/users/google-signin', { tokenId });
+    const response = await axios.post(`${process.env.REACT_APP_API_URL}/users/google-signin`, { tokenId });
     return response.data;
   } catch (error) {
     throw error;

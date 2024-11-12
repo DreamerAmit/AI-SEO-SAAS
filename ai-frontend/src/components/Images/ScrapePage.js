@@ -10,7 +10,7 @@ const ScrapePage = () => {
   const handleScrape = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post('http://localhost:3001/api/v1/users/scrape-and-generate', { url });
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/users/scrape-and-generate`, { url });
       if (Array.isArray(response.data) && response.data.length > 0) {
         navigate('/scraped-images', { state: { scrapedImages: response.data, url } });
       } else {

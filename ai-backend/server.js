@@ -75,7 +75,7 @@ const testDbConnection = async () => {
   }
 };
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 const startServer = async () => {
   try {

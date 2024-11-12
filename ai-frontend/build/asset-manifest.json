@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/static/css/main.6ebc91b6.css",
+    "main.js": "/static/js/main.293472de.js",
+    "static/js/787.2a1b3b24.chunk.js": "/static/js/787.2a1b3b24.chunk.js",
+    "static/media/ai.png": "/static/media/ai.d263f7c142d736999021.png",
+    "static/media/robot-with-wrench.png": "/static/media/robot-with-wrench.49af368e58e686b99263.png",
+    "index.html": "/index.html",
+    "main.6ebc91b6.css.map": "/static/css/main.6ebc91b6.css.map",
+    "main.293472de.js.map": "/static/js/main.293472de.js.map",
+    "787.2a1b3b24.chunk.js.map": "/static/js/787.2a1b3b24.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6ebc91b6.css",
+    "static/js/main.293472de.js"
+  ]
+}

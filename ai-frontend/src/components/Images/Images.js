@@ -27,7 +27,7 @@ const Images = () => {
       if (!userId) {
         throw new Error('User ID is not available');
       }
-      const response = await axios.get('/api/v1/images/altText', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/images/altText`, {
         params: { userId: userId }
       });
       setImages(response.data);
@@ -63,7 +63,7 @@ const Images = () => {
 
     try {
       console.log('Sending delete request...');
-      const response = await axios.delete('/api/v1/images/altText', { 
+      const response = await axios.delete(`${process.env.REACT_APP_API_URL}/images/altText`, { 
         data: { ids: selectedImages },
         withCredentials: true
       });

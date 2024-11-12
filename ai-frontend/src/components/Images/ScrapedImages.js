@@ -41,7 +41,7 @@ const ScrapedImages = () => {
         return;
       }
 
-      const response = await axios.get('http://localhost:3001/api/v1/credits/remaining', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL}/credits/remaining`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -106,7 +106,7 @@ const ScrapedImages = () => {
 
       // First generate the alt text
       const altTextResponse = await axios.post(
-        'http://localhost:3001/api/v1/images/generate-alt-text',
+        `${process.env.REACT_APP_API_URL}/images/generate-alt-text`,
         {
           selectedImages,
           userId: getUserId(),
@@ -122,7 +122,7 @@ const ScrapedImages = () => {
       // If alt text generation was successful, deduct credits
       if (altTextResponse.data) {
         const creditResponse = await axios.post(
-          'http://localhost:3001/api/v1/credits/deduct',
+          `${process.env.REACT_APP_API_URL}/credits/deduct`,
           {
             usedCredits: selectedImages.length
           },
