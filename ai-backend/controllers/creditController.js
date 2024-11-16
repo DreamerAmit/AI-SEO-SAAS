@@ -1,5 +1,5 @@
 const asyncHandler = require('express-async-handler');
-const pool = require('../Config/database.js');
+const pool = require('../config/database.js');
 const {QueryTypes} = require('sequelize');
 
 const checkAuth = asyncHandler(async (req, res) => {

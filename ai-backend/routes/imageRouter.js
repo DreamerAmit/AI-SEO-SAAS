@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 //const { Pool, QueryTypes } = require('pg');
-const db = require('../Config/database');
+const db = require('../config/database');
 const {QueryTypes} = require('sequelize');
 
 const imageRouter = express.Router();

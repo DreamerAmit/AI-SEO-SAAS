@@ -1,6 +1,6 @@
 const express = require("express");
 const axios = require("axios");
-const db = require("../Config/database"); // Assuming you have a db.js file for PostgreSQL connection
+const db = require("../config/database"); // Assuming you have a db.js file for PostgreSQL connection
 const isAuthenticated = require("../middlewares/isAuthenticated");
 const checkApiRequestLimit = require("../middlewares/checkApiRequestLimit");
 

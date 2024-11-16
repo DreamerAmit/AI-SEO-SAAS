@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../Config/database');
+const sequelize = require('../config/database');
 
 const Payment = sequelize.define('Payment', {
   // Define your payment fields here
