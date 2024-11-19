@@ -1,50 +1,101 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const puppeteer = require('puppeteer');
+const { chromium } = require('playwright');
+
+// Create a singleton browser instance
+let browserInstance = null;
+
+async function getBrowser() {
+    if (!browserInstance) {
+        browserInstance = await chromium.launch({
+            args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+        });
+    }
+    return browserInstance;
+}
 
 exports.scrapeAndGenerate = async (req, res) => {
-  const { url } = req.body;
+    const { url } = req.body;
+    let context;
+    let page;
 
-  if (!url) {
-    return res.status(400).json({ error: 'URL is required' });
-  }
+    try {
+        // Get existing browser instance or create new one
+        const browser = await getBrowser();
+        
+        // Create new context with optimized settings
+        context = await browser.newContext({
+            viewport: { width: 1280, height: 720 },
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            // Disable unnecessary features
+            permissions: ['geolocation'],
+            bypassCSP: true,
+            ignoreHTTPSErrors: true
+        });
 
-  try {
-    const browser = await puppeteer.launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--disable-gpu'
-      ],
-      headless: "new"
-    });
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle0' });
+        page = await context.newPage();
 
-    const images = await page.evaluate(() => {
-      const imgElements = Array.from(document.querySelectorAll('img'));
-      return imgElements.map(img => ({
-        src: img.src,
-        alt: img.alt || '',
-        width: img.width,
-        height: img.height
-      }));
-    });
+        // Block unnecessary resources
+        await page.route('**/*', route => {
+            const resourceType = route.request().resourceType();
+            if (['stylesheet', 'font', 'image', 'media'].includes(resourceType)) {
+                route.abort();
+            } else {
+                route.continue();
+            }
+        });
 
-    await browser.close();
+        // Set shorter timeout
+        await page.goto(url, { 
+            waitUntil: 'domcontentloaded', // Changed from 'networkidle'
+            timeout: 15000 
+        });
 
-    // Remove duplicates based on src
-    const uniqueImages = Array.from(new Set(images.map(img => JSON.stringify(img))))
-      .map(str => JSON.parse(str));
+        // Optimized image scraping
+        const images = await page.evaluate(() => {
+            const imgElements = document.querySelectorAll('img');
+            const results = [];
+            const seen = new Set();
 
-    console.log(`Scraped ${uniqueImages.length} unique images from ${url}`);
-    res.json(uniqueImages);
-  } catch (error) {
-    console.error('Error scraping page:', error);
-    res.status(500).json({ error: 'Error scraping page' });
-  }
+            for (const img of imgElements) {
+                const src = img.src;
+                if (src && !seen.has(src)) {
+                    seen.add(src);
+                    results.push({
+                        src,
+                        alt: img.alt || '',
+                        width: img.width,
+                        height: img.height
+                    });
+                }
+            }
+            return results;
+        });
+
+        console.log(`Scraped ${images.length} images from ${url}`);
+        res.json(images);
+
+    } catch (error) {
+        console.error('Error scraping page:', {
+            message: error.message,
+            url,
+            stack: error.stack
+        });
+        
+        res.status(500).json({ 
+            error: 'Error scraping page',
+            details: error.message 
+        });
+    } finally {
+        // Only close context, keep browser alive
+        if (context) await context.close().catch(console.error);
+    }
 };
+
+// Add cleanup on process exit
+process.on('SIGINT', async () => {
+    if (browserInstance) {
+        await browserInstance.close();
+    }
+    process.exit();
+});
