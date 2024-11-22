@@ -24,7 +24,11 @@ export default function PublicNavbar() {
             <div className="flex lg:flex-1">
               {/* Logo */}
               <Link to="/" className="text-white">
-                <FaCreativeCommonsShare className="h-10 w-10" />
+                <img 
+                  src="../../logo.png"
+                  alt="Logo" 
+                  className="h-14 w-65"
+                />
               </Link>
             </div>
             <div className="flex lg:hidden">
