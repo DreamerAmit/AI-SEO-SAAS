@@ -6,15 +6,17 @@ const ConfirmEmail = () => {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const { token } = useParams();
-  //const API_BASE_URL = 'http://localhost:3001'; // Assuming this is the base URL for API requests
+  const API_URL = process.env.NODE_ENV === 'production' 
+    ? 'http://pic2alt.com/api/v1'
+    : process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
     let isMounted = true;
 
-    const confirmEmail = async () => {
+    const confirmEmail = async () =>  {
       try {
         console.log('Sending confirmation request');
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/users/confirm-email/${token}`);
+        const res = await axios.get(`${API_URL}/users/confirm-email/${token}`);
         console.log('Received response:', res.data);
         if (res.data.status === 'success') {
           console.log('Setting success status');
