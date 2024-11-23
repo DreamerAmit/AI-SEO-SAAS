@@ -7,7 +7,7 @@ const ConfirmEmail = () => {
   const [message, setMessage] = useState('');
   const { token } = useParams();
   const API_URL = process.env.NODE_ENV === 'production' 
-    ? 'http://pic2alt.com/api/v1'
+    ? 'https://pic2alt.com/api/v1'
     : process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
   useEffect(() => {
