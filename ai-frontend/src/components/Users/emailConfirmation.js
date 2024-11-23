@@ -6,7 +6,7 @@ const ConfirmEmail = () => {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const { token } = useParams();
-  const API_BASE_URL = 'http://localhost:3001'; // Assuming this is the base URL for API requests
+  //const API_BASE_URL = 'http://localhost:3001'; // Assuming this is the base URL for API requests
 
   useEffect(() => {
     let isMounted = true;
