@@ -164,8 +164,8 @@ const Images = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">#</th>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
+              <th scope="col" className="w-16 px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">#</th>
+              <th scope="col" className="w-16 px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
                 <input 
                   type="checkbox"
                   onChange={handleSelectAllChange}
@@ -173,8 +173,8 @@ const Images = () => {
                   className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
                 />
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">URL</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Alt Text</th>
+              <th scope="col" className="w-[45%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">URL</th>
+              <th scope="col" className="w-[45%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Alt Text</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -192,8 +192,16 @@ const Images = () => {
                       className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
                     />
                   </td>
-                  <td className="px-6 py-3 text-sm text-black align-middle">{image.src}</td>
-                  <td className="px-6 py-3 text-sm text-black word-wrap:break-words align-middle">{image.alt_text}</td>
+                  <td className="px-6 py-3 text-sm text-black">
+                    <div className="truncate max-w-[500px] hover:whitespace-normal hover:break-words">
+                      {image.src}
+                    </div>
+                  </td>
+                  <td className="px-6 py-3 text-sm text-black">
+                    <div className="break-words">
+                      {image.alt_text}
+                    </div>
+                  </td>
                 </tr>
               ))
             ) : (
