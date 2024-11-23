@@ -6,41 +6,61 @@ const ConfirmEmail = () => {
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const { token } = useParams();
-  const API_URL = process.env.NODE_ENV === 'production' 
+
+  const API_URL = process.env.NODE_ENV === 'production'
     ? 'https://pic2alt.com/api/v1'
-    : process.env.REACT_APP_API_URL || 'http://localhost:3001';
+    : 'http://localhost:3001/api/v1';
 
   useEffect(() => {
-    let isMounted = true;
+    const confirmEmail = async () => {
+      console.log('Current environment:', {
+        nodeEnv: process.env.NODE_ENV,
+        apiUrl: API_URL,
+        token: token
+      });
 
-    const confirmEmail = async () =>  {
       try {
-        console.log('Sending confirmation request');
-        const res = await axios.get(`${API_URL}/users/confirm-email/${token}`);
-        console.log('Received response:', res.data);
-        if (res.data.status === 'success') {
-          console.log('Setting success status');
+        const response = await axios({
+          method: 'GET',
+          url: `${API_URL}/users/confirm-email/${token}`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          validateStatus: function (status) {
+            return status >= 200 && status < 500; // Handle all responses
+          }
+        });
+
+        console.log('Server response:', response.data);
+
+        if (response.data.status === 'success') {
           setStatus('success');
-          setMessage(res.data.message);
+          setMessage(response.data.message || 'Email confirmed successfully!');
         } else {
-          console.log('Setting error status');
           setStatus('error');
-          setMessage(res.data.message || 'An error occurred during email confirmation.');
+          setMessage(response.data.message || 'Failed to confirm email.');
         }
       } catch (error) {
-        console.error('Confirmation error:', error);
-        console.error('Error response:', error.response?.data);
+        console.error('Full error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          url: `${API_URL}/users/confirm-email/${token}`
+        });
+
         setStatus('error');
         setMessage(error.response?.data?.message || 'An error occurred during email confirmation.');
       }
     };
 
-    confirmEmail();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [token]);
+    if (token) {
+      confirmEmail();
+    } else {
+      setStatus('error');
+      setMessage('No confirmation token provided.');
+    }
+  }, [token, API_URL]);
 
   if (status === 'loading') {
     return <div>Verifying your email...</div>;
