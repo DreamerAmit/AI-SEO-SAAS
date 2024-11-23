@@ -18,9 +18,10 @@ const ConfirmEmail = () => {
       console.log('Full request URL:', `${productionUrl}/users/confirm-email/${token}`);
 
       try {
-        const response = await axios({
-          method: 'GET',
-          url: `${productionUrl}/users/confirm-email/${token}`,
+        const response = await axios.create({
+          baseURL: undefined,  // Explicitly unset baseURL
+          proxy: false        // Disable proxy
+        }).get(`${productionUrl}/users/confirm-email/${token}`, {
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
