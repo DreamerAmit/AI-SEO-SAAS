@@ -10,19 +10,19 @@ const cards = [
     name: "AI Powered Speed",
     description:
       "We believe that AI models are now efficient enough to understand the image and generate a good AltText for it.It has the potential to save a lot of time while adding AltText for modern websites.",
-    icon: PhoneIcon,
+    icon: LifebuoyIcon
   },
   {
     name: "SEO Friendly",
     description:
       "When you use Pic2Alt, you can be sure that the AltText generated is SEO friendly and can help your website rank better in search engines.",
-    icon: LifebuoyIcon,
+    icon: NewspaperIcon
   },
   {
     name: "Quick Support",
     description:
       "We have a very quick support team to help you with any queries you may have while using Pic2Alt.",
-    icon: NewspaperIcon,
+    icon: PhoneIcon
   },
 ];
 
