@@ -2,7 +2,7 @@ const mg = require('../config/mailgun');
 
 const sendConfirmationEmail = async (to, token) => {
   const data = {
-    from: `Excited User <mailgun@${process.env.MAILGUN_DOMAIN}>`,
+    from: `Pic2Alt Support <mailgun@${process.env.MAILGUN_DOMAIN}>`,
     to: to,
     subject: 'Confirm Your Email',
     text: `Please confirm your email by clicking on the following link: 

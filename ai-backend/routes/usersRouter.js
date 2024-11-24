@@ -74,7 +74,7 @@ usersRouter.get("/confirm-email/:token", async (req, res) => {
 
     if (!user) {
       console.log('No user found with this token');
-      return res.status(400).json({ message: 'Invalid confirmation token' });
+      return res.json({ status: 'success', message: 'Either the email is already confirmed or the confirmation token is invalid' });
     }
 
     if (user.isEmailConfirmed) {
