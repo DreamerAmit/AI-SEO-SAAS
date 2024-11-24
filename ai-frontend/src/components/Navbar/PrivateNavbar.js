@@ -39,6 +39,16 @@ export default function PrivateNavbar() {
     <Disclosure as="nav" className="bg-gray-900">
       {({ open }) => (
         <>
+          <div className="bg-indigo-600">
+            <div className="mx-auto max-w-7xl py-1 px-3 sm:px-6 lg:px-8">
+              <div className="text-center">
+                <p className="text-sm font-medium text-white">
+                  ✨ Pic2Alt is in beta • Help us improve with your feedback
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <div className="relative flex h-16 items-center">
               <div className="absolute left-4">

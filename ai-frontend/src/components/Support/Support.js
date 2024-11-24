@@ -93,7 +93,7 @@ export default function AppFeatures() {
         </div> */}
 {/* FAQ Section */}
 
-<div className="mt-10">
+{/* <div className="mt-10">
     <h2 className="text-2xl font-bold text-white text-center">Frequently Asked Questions</h2>
     <div className="mt-4 space-y-4">
         <div className="bg-gray-800 p-4 rounded-md">
@@ -109,7 +109,7 @@ export default function AppFeatures() {
             <p className="text-gray-300">When you cancel your subscription plan, automatic renewals will be turned off and you will not be charged going forward. You will retain any unused credits in your account.</p>
         </div>
     </div>
-</div>
+</div> */}
 
       </div>
     </div>
