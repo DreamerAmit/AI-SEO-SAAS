@@ -1,143 +1,225 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../AuthContext/AuthContext'; // Assuming you have AuthContext
 
-const Account = () => {
+export default function Account() {
+  const { user } = useAuth(); // Get user from auth context
+  const [status, setStatus] = useState({ message: '', type: '' });
+  
   const [userInfo, setUserInfo] = useState({
-    firstname: 'Amit',
-    lastname: 'Mahajan',
-    email: 'amitmahajan274@gmail.com'
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || ''
   });
 
   const [password, setPassword] = useState({
-    current: '',
-    new: '',
-    confirm: ''
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
-  const handleUserInfoChange = (e) => {
-    setUserInfo({ ...userInfo, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+        try {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/users/profile`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Raw response data:', data);
 
-  const handlePasswordChange = (e) => {
-    setPassword({ ...password, [e.target.name]: e.target.value });
-  };
+                if (data && data.user) {
+                    setUserInfo({
+                        firstName: data.user.firstName || '',
+                        lastName: data.user.lastName || '',
+                        email: data.user.email || ''
+                    });
+                } else {
+                    console.error('Invalid data structure:', data);
+                }
+            } else {
+                console.error('Response not OK:', response.status);
+            }
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+        }
+    };
 
-  const handleUserInfoSubmit = (e) => {
+    fetchProfile();
+  }, []);
+
+  const handleUserInfoSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement user info update logic
-    console.log('User info updated:', userInfo);
+    setStatus({ message: 'Updating...', type: 'loading' });
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/update-profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName
+        })
+      });
+
+      if (response.ok) {
+        setStatus({ message: 'Profile updated successfully!', type: 'success' });
+      } else {
+        setStatus({ message: 'Failed to update profile', type: 'error' });
+      }
+    } catch (error) {
+      setStatus({ message: 'Error updating profile', type: 'error' });
+    }
   };
 
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement password change logic
-    console.log('Password change submitted:', password);
+    if (password.newPassword !== password.confirmPassword) {
+      setStatus({ message: 'New passwords do not match', type: 'error' });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          currentPassword: password.currentPassword,
+          newPassword: password.newPassword
+        })
+      });
+
+      if (response.ok) {
+        setStatus({ message: 'Password updated successfully!', type: 'success' });
+        setPassword({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setStatus({ message: 'Failed to update password', type: 'error' });
+      }
+    } catch (error) {
+      setStatus({ message: 'Error updating password', type: 'error' });
+    }
   };
 
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
-      <h1>Account</h1>
-      <div style={{ borderBottom: '1px solid #ccc', marginBottom: '20px' }}>
-        <span style={{ marginRight: '15px' }}>Settings</span>
-        {/* <span style={{ marginRight: '15px' }}>Your Plan</span> */}
-        <span style={{ marginRight: '15px', borderBottom: '2px solid #6366f1', color: '#6366f1' }}>User Info</span>
-        {/* <span style={{ marginRight: '15px' }}>API Keys</span>
-        <span style={{ marginRight: '15px' }}>Integration Settings</span> */}
-        {/* <span>Refer a Friend</span> */}
-      </div>
+    <div className="min-h-screen bg-gray-100 py-12">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
 
-      <div style={{ backgroundColor: '#f9fafb', padding: '20px', borderRadius: '8px' }}>
-        <div>
-          <h2>User Info</h2>
-          <form onSubmit={handleUserInfoSubmit}>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="firstname" style={{ display: 'block', marginBottom: '5px' }}>Firstname</label>
-              <input
-                type="text"
-                id="firstname"
-                name="firstname"
-                value={userInfo.firstname}
-                onChange={handleUserInfoChange}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="lastname" style={{ display: 'block', marginBottom: '5px' }}>Lastname</label>
-              <input
-                type="text"
-                id="lastname"
-                name="lastname"
-                value={userInfo.lastname}
-                onChange={handleUserInfoChange}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={userInfo.email}
-                onChange={handleUserInfoChange}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
-            <button type="submit" style={{ backgroundColor: '#6366f1', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
-          </form>
+        {/* Status Message */}
+        {status.message && (
+          <div className={`mb-4 p-4 rounded-md ${
+            status.type === 'success' ? 'bg-green-100 text-green-700' :
+            status.type === 'error' ? 'bg-red-100 text-red-700' :
+            'bg-blue-100 text-blue-700'
+          }`}>
+            {status.message}
+          </div>
+        )}
+
+        {/* Profile Information */}
+        <div className="bg-white shadow rounded-lg mb-6">
+          <div className="px-4 py-5 sm:p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Profile Information</h2>
+            <form onSubmit={handleUserInfoSubmit}>
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">First Name</label>
+                  <input
+                    type="text"
+                    value={userInfo.firstName}
+                    onChange={(e) => setUserInfo({...userInfo, firstName: e.target.value})}
+                    className="mt-1 block w-full border-0 border-b-2 border-gray-300 focus:border-indigo-500 focus:ring-0 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    value={userInfo.lastName}
+                    onChange={(e) => setUserInfo({...userInfo, lastName: e.target.value})}
+                    className="mt-1 block w-full border-0 border-b-2 border-gray-300 focus:border-indigo-500 focus:ring-0 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={userInfo.email}
+                    disabled
+                    className="mt-1 block w-full border-0 border-b-2 border-gray-200 bg-gray-100 text-gray-600 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+              <div className="mt-4">
+                <button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                  Update Profile
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
-        <div style={{ marginTop: '30px' }}>
-          <h2>Change Your Password</h2>
-          <form onSubmit={handlePasswordSubmit}>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="current-password" style={{ display: 'block', marginBottom: '5px' }}>Current Password</label>
-              <input
-                type="password"
-                id="current-password"
-                name="current"
-                value={password.current}
-                onChange={handlePasswordChange}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="new-password" style={{ display: 'block', marginBottom: '5px' }}>New Password</label>
-              <input
-                type="password"
-                id="new-password"
-                name="new"
-                value={password.new}
-                onChange={handlePasswordChange}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
-            <div style={{ marginBottom: '15px' }}>
-              <label htmlFor="confirm-password" style={{ display: 'block', marginBottom: '5px' }}>Confirm New Password</label>
-              <input
-                type="password"
-                id="confirm-password"
-                name="confirm"
-                value={password.confirm}
-                onChange={handlePasswordChange}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-              />
-            </div>
-            <div className="password-requirements">
-              <h3>Password Requirements:</h3>
-              <ul>
-                <li>Minimum of 8 characters</li>
-                <li>At least 1 UPPERCASE</li>
-                <li>At least 1 lowercase</li>
-                <li>At least 1 digit</li>
-                <li>At least 1 special character</li>
-              </ul>
-            </div>
-            <button type="submit" style={{ backgroundColor: '#6366f1', color: 'white', padding: '10px 15px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Save</button>
-          </form>
+        {/* Change Password */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
+            <form onSubmit={handlePasswordSubmit}>
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Current Password</label>
+                  <input
+                    type="password"
+                    value={password.currentPassword}
+                    onChange={(e) => setPassword({...password, currentPassword: e.target.value})}
+                    className="mt-1 block w-full border-0 border-b-2 border-gray-300 focus:border-indigo-500 focus:ring-0 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">New Password</label>
+                  <input
+                    type="password"
+                    value={password.newPassword}
+                    onChange={(e) => setPassword({...password, newPassword: e.target.value})}
+                    className="mt-1 block w-full border-0 border-b-2 border-gray-300 focus:border-indigo-500 focus:ring-0 bg-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={password.confirmPassword}
+                    onChange={(e) => setPassword({...password, confirmPassword: e.target.value})}
+                    className="mt-1 block w-full border-0 border-b-2 border-gray-300 focus:border-indigo-500 focus:ring-0 bg-transparent"
+                  />
+                </div>
+              </div>
+              <div className="mt-4">
+                {/* <div className="rounded-md bg-gray-50 p-4 mb-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</h3>
+                  <ul className="text-sm text-gray-600 list-disc pl-5">
+                    <li>Minimum 8 characters</li>
+                    <li>At least 1 uppercase letter</li>
+                    <li>At least 1 lowercase letter</li>
+                    <li>At least 1 number</li>
+                    <li>At least 1 special character</li>
+                  </ul>
+                </div> */}
+                <button type="submit" className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                  Update Password
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default Account;
+}

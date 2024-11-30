@@ -134,10 +134,134 @@ const checkAuth = asyncHandler(async (req, res) => {
   }
 });
 
+// Get user profile
+const getProfile = async (req, res) => {
+    try {
+        const user = await User.findByPk(req.user.id, {
+            attributes: ['firstName', 'lastName', 'email']
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: user
+        });
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
+        });
+    }
+};
+
+// Update profile
+const updateProfile = async (req, res) => {
+    try {
+        const { firstName, lastName } = req.body;
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        await user.update({
+            firstName,
+            lastName
+        });
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            data: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email
+            }
+        });
+    } catch (error) {
+        console.error('Update profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating profile'
+        });
+    }
+};
+
+// Change password
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        // // Validate password requirements
+        // if (!validatePassword(newPassword)) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Password must be at least 8 characters long and contain uppercase, lowercase, number and special character'
+        //     });
+        // }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+        // Verify current password
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({
+                success: false,
+                message: 'Current password is incorrect'
+            });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password
+        await user.update({
+            password: hashedPassword
+        });
+
+        res.json({
+            success: true,
+            message: 'Password updated successfully'
+        });
+    } catch (error) {
+        console.error('Change password error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error changing password'
+        });
+    }
+};
+
+// Password validation helper
+const validatePassword = (password) => {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return passwordRegex.test(password);
+};
+
 module.exports = {
   register,
   login,
   logout,
   userProfile,
   checkAuth,
+  getProfile,
+  updateProfile,
+  changePassword
 };

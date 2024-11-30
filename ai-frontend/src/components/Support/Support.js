@@ -3,6 +3,7 @@ import {
   CloudArrowUpIcon,
   LockClosedIcon,
 } from "@heroicons/react/20/solid";
+import { useState } from 'react';
 
 const features = [
   {
@@ -29,6 +30,66 @@ const features = [
 ];
 
 export default function AppFeatures() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    message: ''
+  });
+  const [status, setStatus] = useState({ message: '', type: '' });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ message: 'Sending...', type: 'loading' });
+
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/email/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStatus({ message: 'Message sent successfully! We will get back to you at our earliest', type: 'success' });
+        setFormData({ firstName: '', lastName: '', email: '', message: '' });
+      } else {
+        setStatus({ 
+          message: data.message || 'Failed to send message. Please try again with correct details.', 
+          type: 'error' 
+        });
+      }
+    } catch (error) {
+      setStatus({ 
+        message: 'Failed to send message. Please try again.', 
+        type: 'error' 
+      });
+    }
+  };
+
+  const getStatusStyles = (type) => {
+    switch(type) {
+      case 'success':
+        return 'bg-green-100 text-green-800 border-green-300';
+      case 'error':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'loading':
+        return 'bg-blue-100 text-blue-800 border-blue-300';
+      default:
+        return 'bg-white text-gray-700';
+    }
+  };
+
   return (
     <div className="bg-gray-900 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -44,25 +105,68 @@ export default function AppFeatures() {
           </p>
         </div>
          {/* Form Section */}
-    <form className="mt-8 space-y-4">
+    <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         <div>
             <label htmlFor="firstName" className="block text-sm font-medium text-white">First Name</label>
-            <input type="text" id="firstName" name="firstName" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+            <input 
+              type="text" 
+              id="firstName" 
+              name="firstName" 
+              value={formData.firstName}
+              onChange={handleChange}
+              required 
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" 
+            />
         </div>
         <div>
             <label htmlFor="lastName" className="block text-sm font-medium text-white">Last Name</label>
-            <input type="text" id="lastName" name="lastName" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+            <input 
+              type="text" 
+              id="lastName" 
+              name="lastName" 
+              value={formData.lastName}
+              onChange={handleChange}
+              required 
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" 
+            />
         </div>
         <div>
             <label htmlFor="email" className="block text-sm font-medium text-white">Email</label>
-            <input type="email" id="email" name="email" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" />
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              value={formData.email}
+              onChange={handleChange}
+              required 
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" 
+            />
         </div>
         <div>
             <label htmlFor="message" className="block text-sm font-medium text-white">Message</label>
-            <textarea id="message" name="message" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" rows="4"></textarea>
+            <textarea 
+              id="message" 
+              name="message" 
+              value={formData.message}
+              onChange={handleChange}
+              required 
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" 
+              rows="4"
+            ></textarea>
         </div>
+        {status.message && (
+          <div className={`text-center p-3 rounded-md border ${getStatusStyles(status.type)} transition-all duration-300`}>
+            {status.message}
+          </div>
+        )}
         <div>
-            <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-2 rounded-md hover:bg-indigo-700">Submit</button>
+            <button 
+              type="submit" 
+              className="w-full bg-indigo-600 text-white font-bold py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200"
+              disabled={status.type === 'loading'}
+            >
+              {status.type === 'loading' ? 'Sending...' : 'Submit'}
+            </button>
         </div>
     </form>
         {/* <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">

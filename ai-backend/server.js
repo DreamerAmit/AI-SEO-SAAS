@@ -9,6 +9,7 @@ const openAIRouter = require('./routes/openAIRouter');
 const imageRouter = require('./routes/imageRouter');
 const creditRoutes = require('./routes/creditRoutes');
 // const scrapeRouter = require('./routes/scrapeRouter');
+const emailRoutes = require('./routes/emailRoutes');
 
 const app = express();
 
@@ -54,6 +55,8 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/openai', openAIRouter);
 app.use('/api/v1/images', imageRouter);
 app.use('/api/v1/credits', creditRoutes);
+app.use('/api/v1/email', emailRoutes);
+
 
 // PostgreSQL connection setup
 const pool = new Pool({

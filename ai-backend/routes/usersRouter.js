@@ -15,6 +15,8 @@ const { sendConfirmationEmail } = require('../utils/emailSender');
 const db = require('../connectDB');
 const jwt = require('jsonwebtoken');
 const scrapeController = require('../controllers/scrapeController');
+const userController = require('../controllers/usersController');
+const authMiddleware = require('../middlewares/isAuthenticated');
 
 const usersRouter = express.Router();
 
@@ -139,6 +141,13 @@ usersRouter.get("/profile", isAuthenticated, async (req, res) => {
   }
 });
 usersRouter.get("/auth/check", isAuthenticated, checkAuth);
+
+// Profile routes
+usersRouter.get('/profile', isAuthenticated, userController.getProfile);
+usersRouter.put('/update-profile', isAuthenticated, userController.updateProfile);
+
+// Password routes
+usersRouter.put('/change-password', isAuthenticated, userController.changePassword);
 
 usersRouter.post('/scrape-and-generate', scrapeController.scrapeAndGenerate);
 
