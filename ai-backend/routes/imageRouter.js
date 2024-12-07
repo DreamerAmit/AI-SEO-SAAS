@@ -3,6 +3,11 @@ const axios = require('axios');
 //const { Pool, QueryTypes } = require('pg');
 const db = require('../config/database');
 const {QueryTypes} = require('sequelize');
+const multer = require('multer');
+const { uploadAndGenerateAltText } = require('../controllers/imageuploadController');
+const fs = require('fs');
+const path = require('path');
+
 
 const imageRouter = express.Router();
 // const dbPool = new Pool({
@@ -17,6 +22,33 @@ imageRouter.use((req, res, next) => {
   console.log('imageRouter middleware hit:', req.method, req.url);
   next();
 });
+
+// Get upload directory from environment variable
+const uploadDir = process.env.UPLOAD_DIR || './uploads/'; // fallback for safety
+
+// Create uploads directory if it doesn't exist
+if (!fs.existsSync(uploadDir)) {
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`Upload directory created successfully at: ${uploadDir}`);
+  } catch (err) {
+    console.error(`Error creating upload directory at ${uploadDir}:`, err);
+  }
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
+
+imageRouter.post('/upload-and-generate', upload.array('images'), uploadAndGenerateAltText);
+
 
 imageRouter.post('/generate-alt-text', async (req, res) => {
   console.log('Received request to generate alt text');

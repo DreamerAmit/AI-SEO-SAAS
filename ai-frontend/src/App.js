@@ -23,6 +23,7 @@ import Help from './components/Help/Help';
 import ConfirmEmail from './components/Users/EmailConfirmation';
 import ScrapePage from './components/Images/ScrapePage';  
 import ScrapedImages from './components/Images/ScrapedImages';
+import UploadImages from './components/Images/UploadImages';
 import './App.css';  // or wherever your global CSS file is located
 
 export default function App() {
@@ -88,6 +89,7 @@ export default function App() {
           <Route path="/account" element={<AccountPage />} />
           <Route path="/help" element={<Help />} />
           <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
+          <Route path="/upload-images" element={<UploadImages />} />
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>

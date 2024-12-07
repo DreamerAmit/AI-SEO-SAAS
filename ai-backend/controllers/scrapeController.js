@@ -2,32 +2,61 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { chromium } = require('playwright');
 
-// Create a singleton browser instance
-let browserInstance = null;
+// Simple browser pool
+const browserPool = {
+    browsers: [],
+    maxBrowsers: 1, // Start with 1 browsers
 
-async function getBrowser() {
-    if (!browserInstance) {
-        browserInstance = await chromium.launch({
-            args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
-        });
+    async getBrowser() {
+        // Find available browser
+        const availableBrowser = this.browsers.find(b => !b.inUse);
+        if (availableBrowser) {
+            availableBrowser.inUse = true;
+            return availableBrowser;
+        }
+
+        // Create new browser if under limit
+        if (this.browsers.length < this.maxBrowsers) {
+            const browser = await chromium.launch({
+                args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+            });
+            const newBrowser = { browser, inUse: true };
+            this.browsers.push(newBrowser);
+            return newBrowser;
+        }
+
+        // Wait and retry if all browsers are busy
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return this.getBrowser();
+    },
+
+    async releaseBrowser(browserInstance) {
+        const browser = this.browsers.find(b => b.browser === browserInstance);
+        if (browser) {
+            browser.inUse = false;
+        }
+    },
+
+    async cleanup() {
+        await Promise.all(this.browsers.map(b => b.browser.close()));
+        this.browsers = [];
     }
-    return browserInstance;
-}
+};
 
 exports.scrapeAndGenerate = async (req, res) => {
     const { url } = req.body;
+    let browserInstance = null;
     let context;
     let page;
 
     try {
-        // Get existing browser instance or create new one
-        const browser = await getBrowser();
+        // Get available browser from pool
+        const browser = await browserPool.getBrowser();
+        browserInstance = browser.browser;
         
-        // Create new context with optimized settings
-        context = await browser.newContext({
+        context = await browserInstance.newContext({
             viewport: { width: 1280, height: 720 },
             userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            // Disable unnecessary features
             permissions: ['geolocation'],
             bypassCSP: true,
             ignoreHTTPSErrors: true
@@ -87,15 +116,14 @@ exports.scrapeAndGenerate = async (req, res) => {
             details: error.message 
         });
     } finally {
-        // Only close context, keep browser alive
+        // Proper cleanup
         if (context) await context.close().catch(console.error);
+        if (browserInstance) await browserPool.releaseBrowser(browserInstance);
     }
 };
 
-// Add cleanup on process exit
+// Cleanup on process exit
 process.on('SIGINT', async () => {
-    if (browserInstance) {
-        await browserInstance.close();
-    }
+    await browserPool.cleanup();
     process.exit();
 });

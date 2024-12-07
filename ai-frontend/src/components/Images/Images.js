@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport, FaCloudUploadAlt } from 'react-icons/fa';
 import { BsClipboard } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -93,6 +93,10 @@ const Images = () => {
     navigate('/scrape');
   };
 
+  const handleUploadClick = () => {
+    navigate('/upload-images');
+  };
+
   const handleExport = () => {
     const dataToExport = selectedImages.length > 0
       ? images.filter(image => selectedImages.includes(image.id))
@@ -119,11 +123,11 @@ const Images = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Images</h1>
         <div className="flex space-x-2">
-          {/* <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center">
-            <FaPlus className="mr-2" />
-          </button> */}
           <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleScrapePageClick}>
             <BsClipboard className="mr-2" /> Scrape Page
+          </button>
+          <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleUploadClick}>
+            <FaCloudUploadAlt className="mr-2" /> Upload Images
           </button>
           <button 
             className="bg-white text-black px-4 py-2 rounded border border-gray-300 flex items-center"
