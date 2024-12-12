@@ -11,6 +11,7 @@ import { useAuth } from "./AuthContext/AuthContext";
 import AuthRoute from "./components/AuthRoute/AuthRoute";
 import BlogPostAIAssistant from "./components/ContentGeneration/ContentGeneration";
 import BetaPlan from './components/Plans/BetaPlan';
+import Plan from './components/Plans/Plan';
 import FreePlanSignup from "./components/StripePayment/FreePlanSignup";
 import CheckoutForm from "./components/StripePayment/CheckoutForm";
 import PaymentSuccess from "./components/StripePayment/PaymentSuccess";
@@ -63,7 +64,7 @@ export default function App() {
             }
           />
           <Route path="/" element={<Home />} />
-          <Route path="/plans" element={<BetaPlan />} />
+          <Route path="/plans" element={<Plan />} />
           <Route
             path="/free-plan"
             element={

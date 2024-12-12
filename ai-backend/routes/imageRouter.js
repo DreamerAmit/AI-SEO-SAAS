@@ -66,7 +66,7 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
             content: [
               { 
                 type: "text", 
-                text: `Generate a 50-word alt text for this image by following the prompt: ${chatGptPrompt}`
+                text: `Generate alt text for this image by following the prompt: ${chatGptPrompt}`
                 
               },
               { type: "image_url", image_url: { url: image.src } }
