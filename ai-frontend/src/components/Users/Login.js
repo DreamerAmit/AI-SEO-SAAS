@@ -21,10 +21,20 @@ const Login = () => {
           user: {
             id: data.user.id,
             username: data.user.username,
-            email: data.user.email
+            email: data.user.email,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName
           }
         });
         localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify({
+          id: data.user.id,
+          username: data.user.username,
+          email: data.user.email,
+          firstName: data.user.firstName,
+          lastName: data.user.lastName
+        }));
+        console.log(data.user.firstName, data.user.lastName, data.user.email);
         console.log("User logged in, navigating to dashboard");
         navigate("/dashboard");
       } else {

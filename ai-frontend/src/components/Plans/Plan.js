@@ -13,6 +13,8 @@ const tiers = [
     monthlyCredits: "100 Credits per month",
     yearlyCredits: "1,200 Credits per year",
     mostPopular: false,
+    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
+    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
 
   {
@@ -26,6 +28,8 @@ const tiers = [
     monthlyCredits: "500 Credits per month",
     yearlyCredits: "6,000 Credits per year",
     mostPopular: true,
+    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
+    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Pro",
@@ -38,6 +42,8 @@ const tiers = [
     monthlyCredits: "2,000 Credits per month",
     yearlyCredits: "24,000 Credits per year",
     mostPopular: false,
+    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
+    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Advanced",
@@ -50,6 +56,8 @@ const tiers = [
     monthlyCredits: "5,000 Credits per month",
     yearlyCredits: "60,000 Credits per year",
     mostPopular: false,
+    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
+    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Premium",
@@ -62,6 +70,8 @@ const tiers = [
     monthlyCredits: "10,000 Credits per month",
     yearlyCredits: "120,000 Credits per year",
     mostPopular: false,
+    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
+    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Credit Packs",
@@ -91,14 +101,47 @@ export default function Plans() {
   const creditPacks = tiers.filter(tier => tier.id === "Credit Packs");
 
   const handleSlect = (plan) => {
+    // Get user data from localStorage
+    const userData = JSON.parse(localStorage.getItem('user')) || {};
+    const { firstName, lastName, email } = userData;
+
+    // Encode the values for URL
+    const encodedFirstName = encodeURIComponent(firstName || '');
+    const encodedLastName = encodeURIComponent(lastName || '');
+    const encodedEmail = encodeURIComponent(email || '');
+
     setSelectedPlan(plan);
     console.log(selectedPlan);
     if (plan?.id === "Free") {
       navigate("/free-plan");
-    } else {
-      //make the actual for payment
-      navigate(`/checkout/${plan?.id}?amount=${plan?.amount}`);
-    }
+    } else if (plan?.id === "Starter-monthly") {
+      // Redirect to external payment URL
+      window.location.href = plan.monthlyCheckoutURL;
+    } else if (plan?.id === "Starter-yearly") {
+      window.location.href = plan.yearlyCheckoutURL;
+    } else if (plan?.id === "Growth-monthly ") {
+      // Redirect to external payment URL
+      window.location.href = plan.monthlyCheckoutURL;
+    } else if (plan?.id === "Growth-yearly") {
+      window.location.href = plan.yearlyCheckoutURL;
+    } else if (plan?.id === "Pro-monthly") {
+      window.location.href = plan.monthlyCheckoutURL;
+    } else if (plan?.id === "Pro-yearly") {
+      window.location.href = plan.yearlyCheckoutURL;
+    } else if (plan?.id === "Advanced-monthly") {
+      window.location.href = plan.monthlyCheckoutURL;
+    } else if (plan?.id === "Advanced-yearly") {
+      window.location.href = plan.yearlyCheckoutURL;
+    } else if (plan?.id === "Premium-monthly") {
+      window.location.href = plan.monthlyCheckoutURL;
+    } else if (plan?.id === "Premium-yearly") {
+      window.location.href = plan.yearlyCheckoutURL;
+    } 
+    else if (plan?.id === "Credit Packs") {
+      const quantity = document.querySelector('input[type="number"]').value || 1;
+      // Use the encoded values directly
+      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_L2WeOPWjVIDi5cOrbXLWV?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=http://localhost:3002/dashboard`;
+    } 
   };
 
   return (
