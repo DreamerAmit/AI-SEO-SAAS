@@ -4,7 +4,13 @@ const AuthContext = createContext();
 
 export const getUserId = () => {
   const userId = localStorage.getItem('userId');
-  console.log('Retrieved userId:', userId); // Add this line for debugging
+  if (!userId) {
+    const user = localStorage.getItem('user');
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      return parsedUser.id;
+    }
+  }
   return userId;
 };
 
@@ -13,32 +19,52 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    console.log('AuthContext - Initial token check:', token);
+    
     if (token) {
       setIsAuthenticated(true);
-      // Optionally, fetch user data here and set the user state
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      console.log('AuthContext - Setting isAuthenticated to true');
     }
   }, []);
 
- 
-
-  const loginUser = (userData) => {
-    console.log("loginUser called with:", userData);
-    if (!userData.user || !userData.user.id) {
-      console.error('User ID is missing in userData:', userData);
+  const loginUser = async (userData) => {
+    console.log("AuthContext - loginUser called with:", userData);
+    if (!userData.token) {
+      console.error('AuthContext - Token is missing in userData:', userData);
       return;
     }
-    setUser(userData.user);
+    
+    localStorage.setItem('token', userData.token);
+    
+    // If user data is available, store it
+    if (userData.user) {
+      localStorage.setItem('user', JSON.stringify(userData.user));
+      localStorage.setItem('userId', userData.user.id);
+      setUser(userData.user);
+    }
+    
     setIsAuthenticated(true);
-    localStorage.setItem('authToken', userData.token);
-    localStorage.setItem('userId', userData.user.id); // Store user ID in local storage
     console.log("User state updated, isAuthenticated set to true");
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 100);
+    });
   };
 
   const logoutUser = () => {
+    console.log('Logging out user...');
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('authToken');
+    localStorage.clear();
+    console.log('User logged out, auth state cleared');
+    window.location.href = '/login';
   };
 
   return (

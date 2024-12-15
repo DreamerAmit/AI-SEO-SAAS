@@ -3,9 +3,19 @@ import { Link } from "react-router-dom";
 import { getUserProfileAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../AuthContext/AuthContext';
+import { useEffect } from 'react';
 
 const Dashboard = () => {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+  }, [isAuthenticated, navigate]);
 
   //get the user profile
   const { isLoading, isError, data, error } = useQuery({
