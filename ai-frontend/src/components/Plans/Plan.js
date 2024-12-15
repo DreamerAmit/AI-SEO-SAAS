@@ -14,8 +14,6 @@ const tiers = [
     monthlyCredits: "100 Credits per month",
     yearlyCredits: "1,200 Credits per year",
     mostPopular: false,
-    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
-    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
 
   {
@@ -29,8 +27,6 @@ const tiers = [
     monthlyCredits: "500 Credits per month",
     yearlyCredits: "6,000 Credits per year",
     mostPopular: true,
-    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
-    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Pro",
@@ -43,8 +39,6 @@ const tiers = [
     monthlyCredits: "2,000 Credits per month",
     yearlyCredits: "24,000 Credits per year",
     mostPopular: false,
-    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
-    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Advanced",
@@ -57,8 +51,6 @@ const tiers = [
     monthlyCredits: "5,000 Credits per month",
     yearlyCredits: "60,000 Credits per year",
     mostPopular: false,
-    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
-    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Premium",
@@ -71,8 +63,6 @@ const tiers = [
     monthlyCredits: "10,000 Credits per month",
     yearlyCredits: "120,000 Credits per year",
     mostPopular: false,
-    monthlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
-    yearlyCheckoutURL: `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=1&redirect_url=https://www.pic2alt.com`,
   },
   {
     name: "Credit Packs",
