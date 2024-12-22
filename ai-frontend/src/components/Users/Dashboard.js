@@ -286,6 +286,9 @@ const Dashboard = () => {
                     <p className="text-xs text-red-500 font-medium mt-1">
                       Credits Added: 0
                     </p>
+                    <p className="text-xs text-red-500 font-medium mt-1">
+                      Failure Reason: Card Declined
+                    </p>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col items-end">

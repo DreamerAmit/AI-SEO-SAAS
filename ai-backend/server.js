@@ -10,6 +10,7 @@ const imageRouter = require('./routes/imageRouter');
 const creditRoutes = require('./routes/creditRoutes');
 // const scrapeRouter = require('./routes/scrapeRouter');
 const emailRoutes = require('./routes/emailRoutes');
+const webhookRoutes = require('./routes/webhook');
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/v1/openai', openAIRouter);
 app.use('/api/v1/images', imageRouter);
 app.use('/api/v1/credits', creditRoutes);
 app.use('/api/v1/email', emailRoutes);
+app.use('/api/v1/webhooks', webhookRoutes);
 
 
 // PostgreSQL connection setup

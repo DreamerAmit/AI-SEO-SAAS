@@ -2,6 +2,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
+const PaymentService = require("../services/PaymentService");
+
+// Initialize payment service with parentheses
+const paymentService = new PaymentService();
 
 //------Registration-----
 const register = asyncHandler(async (req, res) => {
@@ -45,8 +49,9 @@ const register = asyncHandler(async (req, res) => {
 
     // Save the user
     await newUser.save();
+    console.log("User saved:", newUser);
     
-    console.log("User registered successfully:", email);
+    
 
     // Send response
     res.status(201).json({
@@ -56,6 +61,10 @@ const register = asyncHandler(async (req, res) => {
         firstName,
         lastName,
         email,
+        customer: {
+          id: customer.id,
+          customer_external_id: customer.customer_external_id
+        }
       },
     });
   } catch (error) {

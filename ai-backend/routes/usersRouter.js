@@ -17,6 +17,8 @@ const jwt = require('jsonwebtoken');
 const scrapeController = require('../controllers/scrapeController');
 const userController = require('../controllers/usersController');
 const authMiddleware = require('../middlewares/isAuthenticated');
+const PaymentService = require('../services/PaymentService');
+const paymentService = new PaymentService();
 
 const usersRouter = express.Router();
 
@@ -43,19 +45,32 @@ usersRouter.post("/register", async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new user
-    const newUser = await db.query(
+    const { rows: [newUser] } = await db.query(
       'INSERT INTO "Users" ("firstName", "lastName", "email", "password", "confirmationToken", "confirmationTokenExpires") VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, "firstName", "lastName", "email", "confirmationToken", "confirmationTokenExpires"',
       [firstName, lastName, email, hashedPassword, confirmationToken, confirmationTokenExpires]
     );
-
+    console.log('UserId:', newUser.id);
     console.log('Attempting to send confirmation email');
     await sendConfirmationEmail(email, confirmationToken);
     console.log('Confirmation email sent successfully');
+        // Create customer in payment service
+    const customer = await paymentService.createCustomer({
+      user_id: newUser.id,
+      customer_external_id: newUser.id,
+      name: `${newUser.firstName} ${newUser.lastName}`,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email
+    });
 
+    console.log('Customer creation response:', customer);
+
+    await db.query('COMMIT');
+    
+    console.log("User registered successfully:", email);
     res.status(201).json({
       status: "success",
-      message: 'User registered successfully',
-      user: newUser.rows[0]
+      message: 'User registered successfully'
     });
   } catch (error) {
     console.error('Detailed registration error:', error);
@@ -67,12 +82,13 @@ usersRouter.post("/register", async (req, res, next) => {
 usersRouter.get("/confirm-email/:token", async (req, res) => {
   try {
     
-    const { token } = req.params;
+    const { token } = req.params.token;
     console.log('Received token:', token);
 
     // First, find the user with this token
     const result = await db.query('SELECT * FROM "Users" WHERE "confirmationToken" = $1', [token]);
     const user = result.rows[0];
+    console.log('User found:', user);
 
     if (!user) {
       console.log('No user found with this token');
@@ -86,6 +102,7 @@ usersRouter.get("/confirm-email/:token", async (req, res) => {
     res.json({ status: 'success', message: 'Email confirmed successfully' });
     // If we've reached here, the token is valid and the email isn't confirmed yet
     // Now we update the user
+    
     await db.query(
       'UPDATE "Users" SET "isEmailConfirmed" = true, "confirmationToken" = NULL, "confirmationTokenExpires" = NULL WHERE id = $1',
       [user.id]
@@ -102,11 +119,11 @@ usersRouter.get("/confirm-email/:token", async (req, res) => {
 usersRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    const result = await db.query('SELECT * FROM "Users" WHERE email = $1', [email]);
+    const result = await db.query('SELECT * FROM "Users" WHERE email = $1 AND "isEmailConfirmed" = true', [email]);
     const user = result.rows[0];
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: "Invalid credentials or account is not confirmed" });
     }
 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
