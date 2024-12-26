@@ -177,8 +177,8 @@ const Images = () => {
                   className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
                 />
               </th>
-              <th scope="col" className="w-[45%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">URL</th>
-              <th scope="col" className="w-[45%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Alt Text</th>
+              <th scope="col" className="w-[35%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">URL</th>
+              <th scope="col" className="w-[55%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">Alt Text</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">

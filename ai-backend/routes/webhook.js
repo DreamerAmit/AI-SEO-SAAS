@@ -1,30 +1,34 @@
 const express = require('express');
 const router = express.Router();
+const WebhookService = require('../services/WebhookService');
 
-// Log to verify route is registered
-console.log('Webhook routes registered');
-
-router.post('/payments', (req, res) => {
+router.post('/payments', async (req, res) => {
   try {
-    // Log the incoming request
-    console.log('\n🔔 Webhook Received at:', new Date().toISOString());
-    console.log('\nHeaders:', req.headers);
-    console.log('\nBody:', JSON.stringify(req.body, null, 2));
+    // Create new instance for each request
+    const webhookService = new WebhookService();
+    
+    console.log('Webhook received:', {
+      type: req.body.type,
+      timestamp: new Date().toISOString()
+    });
 
-    // Send success response
-    res.status(200).json({ 
+    const result = await webhookService.processWebhook(req.body);
+
+    res.status(200).json({
       status: 'success',
-      message: 'Webhook received successfully'
+      message: 'Webhook processed successfully',
+      data: result
     });
 
   } catch (error) {
-    // Log the error
-    console.error('Webhook Error:', error);
+    console.error('Webhook Error:', {
+      message: error.message,
+      stack: error.stack
+    });
 
-    // Send error response
-    res.status(500).json({
+    res.status(200).json({
       status: 'error',
-      message: error.message || 'Internal server error'
+      message: error.message
     });
   }
 });

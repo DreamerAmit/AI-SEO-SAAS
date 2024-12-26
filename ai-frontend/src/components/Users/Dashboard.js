@@ -60,13 +60,13 @@ const Dashboard = () => {
             <div>
               <div className="mb-4">
                 <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
+                  className="block text-gray-500 text-sm font-bold mb-2"
                   htmlFor="username"
                 >
                   Name
                 </label>
                 <p
-                  className="border rounded w-full py-2 px-3 text-gray-700 leading-tight"
+                  className="border rounded w-full py-2 px-3 text-gray-500 leading-tight"
                   id="username"
                 >
                {`${data?.user?.firstName || ''} ${data?.user?.lastName || ''}`.trim()}
@@ -74,13 +74,13 @@ const Dashboard = () => {
               </div>
               <div className="mb-4">
                 <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
+                  className="block text-gray-500 text-sm font-bold mb-2"
                   htmlFor="email"
                 >
                   Email
                 </label>
                 <p
-                  className="border rounded w-full py-2 px-3 text-gray-700 leading-tight"
+                  className="border rounded w-full py-2 px-3 text-gray-500 leading-tight"
                   id="email"
                 >
                   {data?.user?.email}
@@ -98,8 +98,9 @@ const Dashboard = () => {
               </p> 
               <p className="mb-4">Credit Used: {data?.user?.apiRequestCount}</p>*/}
               <p className="mb-4">
-                Credit Remaining:{" "}
+              <span className="font-bold mb-2 text-sm text-gray-500">  Credit Remaining:{" "} </span>
                 {data?.user?.image_credits}
+              
               </p>
               {/* <p className="mb-4">
                 Next Billing Date:{" "}
@@ -115,13 +116,16 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold mb-4">Payment & Plans</h2>
             <div>
               <p className="mb-4">
-                Current Plan: {data?.user?.subscriptionPlan}
+                <span className="font-bold mb-2 text-sm text-gray-500">Current Plan:</span> {data?.user?.subscriptionPlan}
+              </p>
+              <p className="mb-4">  
+                <span className="font-bold mb-2 text-sm text-gray-500">Payment Status:</span> NA
               </p>
               <p className="mb-4">
-                Billing Cycle: Monthly
+                <span className="font-bold mb-2 text-sm text-gray-500">Billing Cycle:</span> Monthly
               </p>
               <p className="mb-4">
-                Next Renewal Date: 1st Jan 2025
+                <span className="font-bold mb-2 text-sm text-gray-500">Next Renewal Date:</span> 1st Jan 2025
               </p>
 
               {data?.user?.subscriptionPlan === "Free" && (
@@ -144,12 +148,12 @@ const Dashboard = () => {
                   to="/plans"
                   className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Upgrade Plan
+                  Add Credits
                 </Link>
                 <button
                   className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                 >
-                  Cancel Plan
+                  Cancel Renewal
                 </button>
               </div>
             </div>
@@ -160,10 +164,10 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold mb-4">Images with AltText in your Library</h2>
             <div>
               <p className="mb-4">
-                Count: {data?.user?.imagecount}
+                <span className="font-bold mb-2 text-sm text-gray-500">Count:</span> {data?.user?.imagecount}
               </p>
-              <div className="mt-24"></div>
-              <div className="flex gap-4">
+              <div className="mt-28"></div>
+              <div className="mt-auto pt-6">
                 <Link
                   to="/images"
                   className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
