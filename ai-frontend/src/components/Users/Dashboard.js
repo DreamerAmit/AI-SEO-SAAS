@@ -124,6 +124,7 @@ const Dashboard = () => {
               <p className="mb-4">
                 <span className="font-bold mb-2 text-sm text-gray-500">Billing Cycle:</span> Monthly
               </p>
+
               <p className="mb-4">
                 <span className="font-bold mb-2 text-sm text-gray-500">Next Renewal Date:</span> 1st Jan 2025
               </p>
