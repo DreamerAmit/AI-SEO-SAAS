@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getUserProfileAPI } from "../../apis/user/usersAPI";
+import { getUserProfileAPI, getSubscriptionDetailsAPI, getPaymentHistoryAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext/AuthContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 
 const Dashboard = () => {
   const { isAuthenticated } = useAuth();
@@ -19,8 +20,8 @@ const Dashboard = () => {
 
   //get the user profile
   const { isLoading, isError, data, error } = useQuery({
-    queryFn: getUserProfileAPI,
     queryKey: ["profile"],
+    queryFn: getUserProfileAPI,
     onError: (error) => {
       if (error.response && error.response.status === 401) {
         // Token is invalid or expired
@@ -29,6 +30,24 @@ const Dashboard = () => {
       }
     }
   });
+
+  // Add new queries
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: getSubscriptionDetailsAPI,
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { data: paymentHistory } = useQuery({
+    queryKey: ["paymentHistory", currentPage],
+    queryFn: () => getPaymentHistoryAPI(currentPage),
+  });
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'NA';
+    return format(new Date(dateString), 'MMM dd, yyyy');
+  };
 
   console.log("Dashboard query state:", { isLoading, isError, data, error });
 
@@ -116,34 +135,26 @@ const Dashboard = () => {
             <h2 className="text-xl font-semibold mb-4">Payment & Plans</h2>
             <div>
               <p className="mb-4">
-                <span className="font-bold mb-2 text-sm text-gray-500">Current Plan:</span> {data?.user?.subscriptionPlan}
-              </p>
-              <p className="mb-4">  
-                <span className="font-bold mb-2 text-sm text-gray-500">Payment Status:</span> NA
+                <span className="font-bold mb-2 text-sm text-gray-500">Current Plan:</span>{" "}
+                {subscriptionData?.subscription?.current_plan || 'Trial'}
               </p>
               <p className="mb-4">
-                <span className="font-bold mb-2 text-sm text-gray-500">Billing Cycle:</span> Monthly
+                <span className="font-bold mb-2 text-sm text-gray-500">Payment Status:</span>{" "}
+                {subscriptionData?.subscription?.payment_status === 'Payment Successful' ? (
+                  <span className="text-green-500 font-bold italic">Payment Successful</span>
+                ) : (
+                  subscriptionData?.subscription?.payment_status || 'Not Subscribed'
+                )}
               </p>
-
               <p className="mb-4">
-                <span className="font-bold mb-2 text-sm text-gray-500">Next Renewal Date:</span> 1st Jan 2025
+                <span className="font-bold mb-2 text-sm text-gray-500">Billing Cycle:</span>{" "}
+                {subscriptionData?.subscription?.current_plan?.toLowerCase().includes('monthly') ? 'Monthly' : 
+                 subscriptionData?.subscription?.current_plan?.toLowerCase().includes('yearly') ? 'Yearly' : 'NA'}
               </p>
-
-              {data?.user?.subscriptionPlan === "Free" && (
-                <p className="border mb-2 rounded w-full py-2 px-3 text-gray-700 leading-tight">
-                  Free: 5 monthly request
-                </p>
-              )}
-              {data?.user?.subscriptionPlan === "Basic" && (
-                <p className="border mb-2 rounded w-full py-2 px-3 text-gray-700 leading-tight">
-                  Basic: 50 monthly request
-                </p>
-              )}
-              {data?.user?.subscriptionPlan === "Premium" && (
-                <p className="border mb-2 rounded w-full py-2 px-3 text-gray-700 leading-tight">
-                  Premium: 100 monthly request
-                </p>
-              )}
+              <p className="mb-4">
+                <span className="font-bold mb-2 text-sm text-gray-500">Next Renewal Date:</span>{" "}
+                {formatDate(subscriptionData?.subscription?.next_renewal_date)}
+              </p>
               <div className="flex gap-4">
                 <Link
                   to="/plans"
@@ -151,11 +162,11 @@ const Dashboard = () => {
                 >
                   Add Credits
                 </Link>
-                <button
-                  className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Cancel Renewal
-                </button>
+                {subscriptionData?.subscription?.payment_status === 'Payment Successful' && (
+                  <button className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Cancel Renewal
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -185,149 +196,85 @@ const Dashboard = () => {
               Payment History
             </h2>
             <ul className="divide-y divide-gray-200">
-              {/* Example 1: Recent Premium Plan Payment */}
-              <li className="py-4 hover:bg-gray-50 transition duration-150 ease-in-out">
-                <div className="flex flex-col sm:flex-row justify-between">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="text-sm font-medium text-indigo-600">
-                      Premium Plan Subscription
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      March 15, 2024
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Transaction ID: TXN_PM_789012345
-                    </p>
-                    <p className="text-xs text-emerald-600 font-medium mt-1">
-                      Credits Added: 100
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex flex-col items-end">
-                      <p className="text-sm font-semibold text-green-500">
-                        succeeded
+              {paymentHistory?.history?.map((transaction) => (
+                <li key={transaction.transactionId} className="py-4 hover:bg-gray-50 transition duration-150 ease-in-out">
+                  <div className="flex flex-col sm:flex-row justify-between">
+                    <div className="mb-2 sm:mb-0">
+                      <p className={`text-sm font-medium ${
+                        transaction.status === 'failed' 
+                          ? 'text-red-600' 
+                          : 'text-indigo-600'
+                      }`}>
+                        {transaction.title}
                       </p>
-                      <p className="text-sm text-gray-700">
-                        $ 49.99
+                      <p className="text-xs text-gray-500">
+                        {formatDate(transaction.date)}
                       </p>
-                    </div>
-                    <button
-                      className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
-                      title="Download Invoice"
-                    >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-5 w-5" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
-                      <span className="ml-1">Invoice</span>
-                    </button>
-                  </div>
-                </div>
-              </li>
-
-              {/* Example 2: Basic Plan Payment */}
-              <li className="py-4 hover:bg-gray-50 transition duration-150 ease-in-out">
-                <div className="flex flex-col sm:flex-row justify-between">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="text-sm font-medium text-indigo-600">
-                      Basic Plan Subscription
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      February 15, 2024
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Transaction ID: TXN_BS_456789012
-                    </p>
-                    <p className="text-xs text-emerald-600 font-medium mt-1">
-                      Credits Added: 50
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex flex-col items-end">
-                      <p className="text-sm font-semibold text-green-500">
-                        succeeded
+                      <p className="text-xs text-gray-500 mt-1">
+                        Transaction ID: {transaction.transactionId}
                       </p>
-                      <p className="text-sm text-gray-700">
-                        $ 29.99
+                      <p className={`text-xs ${
+                        transaction.status === 'failed'
+                          ? 'text-red-500'
+                          : 'text-emerald-600'
+                      } font-medium mt-1`}>
+                        Credits Added: {transaction.creditsAdded}
                       </p>
                     </div>
-                    <button
-                      className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
-                      title="Download Invoice"
-                    >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-5 w-5" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
-                      <span className="ml-1">Invoice</span>
-                    </button>
                   </div>
-                </div>
-              </li>
-
-              {/* Example 3: Failed Payment */}
-              <li className="py-4 hover:bg-gray-50 transition duration-150 ease-in-out">
-                <div className="flex flex-col sm:flex-row justify-between">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="text-sm font-medium text-indigo-600">
-                      Premium Plan Subscription
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      January 15, 2024
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Transaction ID: TXN_FL_123456789
-                    </p>
-                    <p className="text-xs text-red-500 font-medium mt-1">
-                      Credits Added: 0
-                    </p>
-                    <p className="text-xs text-red-500 font-medium mt-1">
-                      Failure Reason: Card Declined
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="flex flex-col items-end">
-                      <p className="text-sm font-semibold text-red-500">
-                        failed
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        $ 49.99
-                      </p>
-                    </div>
-                    <button
-                      className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center"
-                      title="Download Invoice"
-                    >
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-5 w-5" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                      </svg>
-                      <span className="ml-1">Invoice</span>
-                    </button>
-                  </div>
-                </div>
-              </li>
+                </li>
+              ))}
+              {(!paymentHistory?.history || paymentHistory.history.length === 0) && (
+                <li className="py-4 text-center text-gray-500">
+                  No payment history available
+                </li>
+              )}
             </ul>
+            
+            {paymentHistory?.pagination?.totalPages > 1 && (
+              <Pagination
+                currentPage={paymentHistory.pagination.currentPage}
+                totalPages={paymentHistory.pagination.totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+              />
+            )}
           </div>
         </div>
       </div>
     );
   }
+};
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  return (
+    <div className="flex justify-center items-center space-x-2 mt-4">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-1 rounded ${
+          currentPage === 1
+            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+        }`}
+      >
+        Previous
+      </button>
+      <span className="text-gray-600">
+        Page {currentPage} of {totalPages}
+      </span>
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-1 rounded ${
+          currentPage === totalPages
+            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+        }`}
+      >
+        Next
+      </button>
+    </div>
+  );
 };
 
 export default Dashboard;

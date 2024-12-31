@@ -5,6 +5,8 @@ const {
   logout,
   userProfile,
   checkAuth,
+  getUserProfileWithSubscription,
+  getUserPaymentHistory
 } = require("../controllers/usersController");
 const isAuthenticated = require("../middlewares/isAuthenticated");
 const { verifyPayment } = require("../controllers/handleStripePayment");
@@ -167,5 +169,9 @@ usersRouter.put('/update-profile', isAuthenticated, userController.updateProfile
 usersRouter.put('/change-password', isAuthenticated, userController.changePassword);
 
 usersRouter.post('/scrape-and-generate', scrapeController.scrapeAndGenerate);
+
+// Add these new routes after existing routes
+usersRouter.get("/subscription-details", isAuthenticated, getUserProfileWithSubscription);
+usersRouter.get("/billing-history", isAuthenticated, getUserPaymentHistory);
 
 module.exports = usersRouter;

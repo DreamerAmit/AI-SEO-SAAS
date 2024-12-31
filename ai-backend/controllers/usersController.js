@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const PaymentService = require("../services/PaymentService");
+const db = require('../connectDB');
 
 // Initialize payment service with parentheses
 const paymentService = new PaymentService();
@@ -264,6 +265,140 @@ const validatePassword = (password) => {
     return passwordRegex.test(password);
 };
 
+// Get user payment and subscription history
+const getUserPaymentHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10; // items per page
+    const offset = (page - 1) * limit;
+    
+    // First get total count
+    const countQuery = `
+      SELECT COUNT(*) as total FROM (
+        (
+          SELECT payment_id FROM payments
+          WHERE user_id = $1 AND payment_type = 'credit_pack'
+        )
+        UNION ALL
+        (
+          SELECT subscription_id FROM subscriptions
+          WHERE user_id = $1
+        )
+      ) as combined_records
+    `;
+
+    const totalCount = await db.query(countQuery, [userId]);
+    const total = parseInt(totalCount.rows[0].total);
+    const totalPages = Math.ceil(total / limit);
+    
+    const query = `
+      (
+        SELECT 
+          payment_id as id,
+          amount,
+          status,
+          'credit_pack' as record_type,
+          'Credit Pack Purchase' as title,
+          credits_offered,
+          created_at,
+          failure_reason
+        FROM payments
+        WHERE user_id = $1
+        AND payment_type = 'credit_pack'
+      )
+      UNION ALL
+      (
+        SELECT 
+          s.subscription_id as id,
+          p.price as amount,
+          s.status,
+          'subscription' as record_type,
+          p.name as title,
+          p.credits as credits_offered,
+          s.created_at,
+          s.failure_reason
+        FROM subscriptions s
+        LEFT JOIN plans p ON p.product_id = s.plan_id
+        WHERE s.user_id = $1
+      )
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+
+    const result = await db.query(query, [userId, limit, offset]);
+
+    const transformedHistory = result.rows.map(record => ({
+      title: record.status === 'failed' 
+        ? `${record.title} (Failed)` 
+        : record.title || 'Unknown Plan',
+      date: record.created_at,
+      transactionId: record.id,
+      status: record.status,
+      creditsAdded: record.status === 'failed' ? 0 : (record.credits_offered || 0)
+    }));
+
+    res.json({
+      history: transformedHistory,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: total,
+        hasMore: page < totalPages
+      }
+    });
+
+  } catch (error) {
+    console.error('Get payment history error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Get user profile with current subscription
+const getUserProfileWithSubscription = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const query = `
+      SELECT 
+        p.name as current_plan,
+        CASE 
+          WHEN s.status = 'active' THEN 'Payment Successful'
+          ELSE s.status
+        END as payment_status,
+        CASE 
+          WHEN s.subscription_interval = 'month' THEN 'Monthly'
+          WHEN s.subscription_interval = 'year' THEN 'Yearly'
+          ELSE s.subscription_interval
+        END as billing_cycle,
+        s.current_period_end as next_renewal_date
+      FROM subscriptions s
+      JOIN plans p ON p.product_id = s.plan_id
+      WHERE s.user_id = $1 
+      AND s.status = 'active'
+      ORDER BY s.created_at DESC
+      LIMIT 1
+    `;
+
+    const result = await db.query(query, [userId]);
+    console.log('Query result:', result);
+
+    res.json({
+      subscription: result.rows[0] || {
+        current_plan: 'Trial',
+        payment_status: 'Not Subscribed',
+        billing_cycle: 'NA',
+        next_renewal_date: null
+      }
+    });
+    console.log("Subscription Details:", result.rows[0]);
+
+  } catch (error) {
+    console.error('Get subscription details error:', error);
+    res.status(500).json({ error: 'Failed to fetch subscription details' });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -272,5 +407,7 @@ module.exports = {
   checkAuth,
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  getUserPaymentHistory,
+  getUserProfileWithSubscription
 };
