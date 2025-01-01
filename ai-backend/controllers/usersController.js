@@ -4,6 +4,8 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const PaymentService = require("../services/PaymentService");
 const db = require('../connectDB');
+const axios = require('axios');
+const DodoPayments = require('dodopayments');
 
 // Initialize payment service with parentheses
 const paymentService = new PaymentService();
@@ -399,6 +401,80 @@ const getUserProfileWithSubscription = async (req, res) => {
   }
 };
 
+const cancelSubscriptionRenewal = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get current subscription using only subscription_id
+    const getCurrentSubQuery = `
+      SELECT subscription_id
+      FROM subscriptions 
+      WHERE user_id = $1 AND status = 'active'
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `;
+    
+    const currentSub = await db.query(getCurrentSubQuery, [userId]);
+    
+    if (!currentSub.rows[0]) {
+      return res.status(404).json({ message: 'No active subscription found' });
+    }
+
+    console.log('Attempting to cancel subscription:', currentSub.rows[0].subscription_id);
+
+    // Cancel subscription with Dodo Payments using direct API call
+    try {
+      const result = await axios.patch(
+        `${process.env.DODO_PAYMENTS_URL}/subscriptions/${currentSub.rows[0].subscription_id}`,
+        {
+          status: 'cancelled'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.DOOD_PAYMENTS_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log('Dodo Payments cancellation result:', result.data);
+
+      // Update subscription status in database
+      const updateQuery = `
+        UPDATE subscriptions 
+        SET 
+          status = 'expired',
+          updated_at = NOW()
+        WHERE subscription_id = $1 
+        RETURNING *
+      `;
+
+      await db.query(updateQuery, [currentSub.rows[0].subscription_id]);
+
+      // Return updated subscription details
+      res.json({
+        subscription: {
+          current_plan: 'Trial',
+          payment_status: 'Not Subscribed',
+          billing_cycle: 'NA',
+          next_renewal_date: null
+        },
+        message: 'Subscription cancelled successfully'
+      });
+
+    } catch (error) {
+      console.error('Detailed Dodo Payments error:', error.response?.data || error.message);
+      return res.status(500).json({ 
+        message: 'Failed to cancel subscription with payment provider',
+        details: error.response?.data || error.message
+      });
+    }
+
+  } catch (error) {
+    console.error('Cancel subscription error:', error);
+    res.status(500).json({ message: 'Failed to cancel subscription' });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -409,5 +485,6 @@ module.exports = {
   updateProfile,
   changePassword,
   getUserPaymentHistory,
-  getUserProfileWithSubscription
+  getUserProfileWithSubscription,
+  cancelSubscriptionRenewal
 };

@@ -11,7 +11,7 @@ class PaymentService {
       const { rows: [customer] } = await db.query(
         `INSERT INTO customers (
           user_id,
-          customer_external_id,
+          customer_id,
           email,
           name,
           firstName,
@@ -19,7 +19,7 @@ class PaymentService {
           created_at,
           updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-        RETURNING user_id, customer_external_id, email, name, firstName, lastName, created_at, updated_at`,
+        RETURNING user_id, customer_id, email, name, firstName, lastName, created_at, updated_at`,
         [
           userData.user_id,
           userData.user_id,

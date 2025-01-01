@@ -1,15 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { getUserProfileAPI, getSubscriptionDetailsAPI, getPaymentHistoryAPI } from "../../apis/user/usersAPI";
+import { getUserProfileAPI, getSubscriptionDetailsAPI, getPaymentHistoryAPI, cancelSubscriptionAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext/AuthContext';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 const Dashboard = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -43,6 +45,27 @@ const Dashboard = () => {
     queryKey: ["paymentHistory", currentPage],
     queryFn: () => getPaymentHistoryAPI(currentPage),
   });
+
+  // Add mutation for cancelling subscription
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: cancelSubscriptionAPI,
+    onSuccess: () => {
+      // Invalidate and refetch subscription data
+      queryClient.invalidateQueries(["subscription"]);
+      // Show success message
+      toast.success("Subscription cancelled successfully");
+    },
+    onError: (error) => {
+      console.error("Cancel subscription error:", error);
+      toast.error(error.response?.data?.message || "Failed to cancel subscription");
+    }
+  });
+
+  const handleCancelRenewal = async () => {
+    if (window.confirm("Are you sure you want to cancel your subscription renewal?")) {
+      cancelSubscriptionMutation.mutate();
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'NA';
@@ -163,8 +186,12 @@ const Dashboard = () => {
                   Add Credits
                 </Link>
                 {subscriptionData?.subscription?.payment_status === 'Payment Successful' && (
-                  <button className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                    Cancel Renewal
+                  <button 
+                    onClick={handleCancelRenewal}
+                    disabled={cancelSubscriptionMutation.isLoading}
+                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    {cancelSubscriptionMutation.isLoading ? "Cancelling..." : "Cancel Renewal"}
                   </button>
                 )}
               </div>

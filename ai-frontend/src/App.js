@@ -26,73 +26,77 @@ import ScrapePage from './components/Images/ScrapePage';
 import ScrapedImages from './components/Images/ScrapedImages';
 import UploadImages from './components/Images/UploadImages';
 import './App.css';  // or wherever your global CSS file is located
+import { Toaster } from 'react-hot-toast';
 
 export default function App() {
   //custom auth hook
   const { isAuthenticated } = useAuth();
 
   return (
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
-      <BrowserRouter>
-        {/* Navbar */}
-        {isAuthenticated ? <PrivateNavbar /> : <PublicNavbar />}
-        <Routes>
-          <Route path="/register" element={<Registration />} />
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              <AuthRoute>
-                <Dashboard />
-              </AuthRoute>
-            }
-          />
-          <Route
-            path="/generate-content"
-            element={
-              <AuthRoute>
-                <BlogPostAIAssistant />
-              </AuthRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <AuthRoute>
-                <ContentGenerationHistory />
-              </AuthRoute>
-            }
-          />
-          <Route path="/" element={<Home />} />
-          <Route path="/plans" element={<Plan />} />
-          <Route
-            path="/free-plan"
-            element={
-              <AuthRoute>
-                <FreePlanSignup />
-              </AuthRoute>
-            }
-          />
-          <Route
-            path="/checkout/:plan"
-            element={
-              <AuthRoute>
-                <CheckoutForm />
-              </AuthRoute>
-            }
-          />
-          <Route path="/success" element={<PaymentSuccess />} />
-          <Route path="/support" element={<AppFeatures />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/images" element={<Images />} /> 
-          <Route path="/scrape" element={<ScrapePage />} />
-          <Route path="/scraped-images" element={<ScrapedImages />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/help" element={<Help />} />
-          <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
-          <Route path="/upload-images" element={<UploadImages />} />
-        </Routes>
-      </BrowserRouter>
-    </GoogleOAuthProvider>
+    <>
+      <Toaster position="top-right" />
+      <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+        <BrowserRouter>
+          {/* Navbar */}
+          {isAuthenticated ? <PrivateNavbar /> : <PublicNavbar />}
+          <Routes>
+            <Route path="/register" element={<Registration />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/dashboard"
+              element={
+                <AuthRoute>
+                  <Dashboard />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/generate-content"
+              element={
+                <AuthRoute>
+                  <BlogPostAIAssistant />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <AuthRoute>
+                  <ContentGenerationHistory />
+                </AuthRoute>
+              }
+            />
+            <Route path="/" element={<Home />} />
+            <Route path="/plans" element={<Plan />} />
+            <Route
+              path="/free-plan"
+              element={
+                <AuthRoute>
+                  <FreePlanSignup />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/checkout/:plan"
+              element={
+                <AuthRoute>
+                  <CheckoutForm />
+                </AuthRoute>
+              }
+            />
+            <Route path="/success" element={<PaymentSuccess />} />
+            <Route path="/support" element={<AppFeatures />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/images" element={<Images />} /> 
+            <Route path="/scrape" element={<ScrapePage />} />
+            <Route path="/scraped-images" element={<ScrapedImages />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
+            <Route path="/upload-images" element={<UploadImages />} />
+          </Routes>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
+    </>
   );
 }

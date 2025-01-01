@@ -136,3 +136,25 @@ export const getPaymentHistoryAPI = async (page = 1) => {
   }
 };
 
+export const cancelSubscriptionAPI = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No token found');
+    }
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_URL}/users/cancel-subscription`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        withCredentials: true
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
