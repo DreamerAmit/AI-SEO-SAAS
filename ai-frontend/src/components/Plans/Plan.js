@@ -2,6 +2,9 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '../../AuthContext/AuthContext';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
 const tiers = [
   {
     name: "Starter",
@@ -92,58 +95,97 @@ export default function Plans() {
   const subscriptionPlans = tiers.filter(tier => tier.id !== "Credit Packs");
   const creditPacks = tiers.filter(tier => tier.id === "Credit Packs");
 
-  const handleSlect = (plan) => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      // If not authenticated, redirect to login
-      navigate('/login');
-      return;
-    }
+  const handleSlect = async (plan) => {
+    try {
+      // Check if user is authenticated
+      if (!isAuthenticated) {
+        // If not authenticated, redirect to login
+        navigate('/login');
+        return;
+      }
 
-    // Get user data for authenticated users
-    const userData = JSON.parse(localStorage.getItem('user')) || {};
-    const token = localStorage.getItem('token');
-    console.log("Token Generated",token);
-    const quantity = document.querySelector('input[type="number"]').value || 1;
-    const { firstName, lastName, email } = userData;
+      // Get user data for authenticated users
+      const userData = JSON.parse(localStorage.getItem('user')) || {};
+      const token = localStorage.getItem('token');
+      console.log("Token Generated",token);
+      const quantity = document.querySelector('input[type="number"]').value || 1;
+      const { firstName, lastName, email } = userData;
 
-    // Encode the values for URL
-    const encodedFirstName = encodeURIComponent(firstName || '');
-    const encodedLastName = encodeURIComponent(lastName || '');
-    const encodedEmail = encodeURIComponent(email || '');
+      // Encode the values for URL
+      const encodedFirstName = encodeURIComponent(firstName || '');
+      const encodedLastName = encodeURIComponent(lastName || '');
+      const encodedEmail = encodeURIComponent(email || '');
 
-    setSelectedPlan(plan);
-    console.log(selectedPlan);
-    if (plan?.id === "Free") {
-      navigate("/free-plan");
-    } else if (plan?.id === "Starter-monthly") {
-      // Redirect to external payment URL
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_Fhv2S9fmjUkxh0O6emkjT?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Starter-yearly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_0x5IiCvbf8fR3z82cGby6?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Growth-monthly") {
-      // Redirect to external payment URL
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_5gjxN8WJkYLkZJTC6Qqke?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Growth-yearly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_qHEXpMtVEHb6DvpSugRGi?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Pro-monthly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_oM2X3OD8zFRJQTO20jFC7?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Pro-yearly") {
-        window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_t3bQw3trdnpna1pcHU5oH?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Advanced-monthly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_vFDUZ8yZwTKHp0t7wBbU8?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Advanced-yearly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_aTx8RKyL0KBbCM15rwoFd?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Premium-monthly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_98KDDLL2bk1D7pAev5hJU?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } else if (plan?.id === "Premium-yearly") {
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_TnFlkka854GNSjOZi0MXK?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } 
-    else if (plan?.id === "Credit Packs") {
+      setSelectedPlan(plan);
       
-      // Use the encoded values directly
-      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/pdt_L2WeOPWjVIDi5cOrbXLWV?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
-    } 
+      if (plan?.id === "Free") {
+        navigate("/free-plan");
+        return;
+      }
+
+      // Get product ID based on plan and billing period
+      let productId;
+      switch (plan?.id) {
+        case "Starter-monthly":
+          productId = process.env.REACT_APP_STARTER_MONTHLY_ID;
+          break;
+        case "Starter-yearly":
+          productId = process.env.REACT_APP_STARTER_YEARLY_ID;
+          break;
+        case "Growth-monthly":
+          productId = process.env.REACT_APP_GROWTH_MONTHLY_ID;
+          break;
+        case "Growth-yearly":
+          productId = process.env.REACT_APP_GROWTH_YEARLY_ID;
+          break;
+        case "Pro-monthly":
+          productId = process.env.REACT_APP_PRO_MONTHLY_ID;
+          break;
+        case "Pro-yearly":
+          productId = process.env.REACT_APP_PRO_YEARLY_ID;
+          break;
+        case "Advanced-monthly":
+          productId = process.env.REACT_APP_ADVANCED_MONTHLY_ID;
+          break;
+        case "Advanced-yearly":
+          productId = process.env.REACT_APP_ADVANCED_YEARLY_ID;
+          break;
+        case "Premium-monthly":
+          productId = process.env.REACT_APP_PREMIUM_MONTHLY_ID;
+          break;
+        case "Premium-yearly":
+          productId = process.env.REACT_APP_PREMIUM_YEARLY_ID;
+          break;
+        case "Credit Packs":
+          productId = process.env.REACT_APP_CREDIT_PACK_ID;
+          break;
+        default:
+          console.error('Invalid plan selected');
+          return;
+      }
+
+      // Create checkout session
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/payments/create-checkout-session`, {
+        productId,
+        userId: userData.id
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+
+      // Redirect to payment URL
+      window.location.href = `${process.env.REACT_APP_DODO_CHECKOUT_URL}/${productId}?quantity=${quantity}&firstName=${encodedFirstName}&lastName=${encodedLastName}&email=${encodedEmail}&disableFirstName=true&disableLastName=true&disableEmail=true&redirect_url=${process.env.REACT_APP_REDIRECT_URL}`;
+
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast.error('Failed to initiate checkout');
+    }
   };
 
   return (

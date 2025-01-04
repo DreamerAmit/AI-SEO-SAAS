@@ -316,7 +316,7 @@ const getUserPaymentHistory = async (req, res) => {
           p.price as amount,
           s.status,
           'subscription' as record_type,
-          p.name as title,
+          COALESCE(p.name, 'Subscription Processing') as title,
           p.credits as credits_offered,
           s.created_at,
           s.failure_reason
@@ -331,13 +331,15 @@ const getUserPaymentHistory = async (req, res) => {
     const result = await db.query(query, [userId, limit, offset]);
 
     const transformedHistory = result.rows.map(record => ({
-      title: record.status === 'failed' 
-        ? `${record.title} (Failed)` 
+      title: record.status === 'failed' || record.status === 'cancelled'
+        ? `${record.title} (${record.status === 'failed' ? 'Failed' : 'Cancelled'})` 
         : record.title || 'Unknown Plan',
       date: record.created_at,
       transactionId: record.id,
       status: record.status,
-      creditsAdded: record.status === 'failed' ? 0 : (record.credits_offered || 0)
+      creditsAdded: record.status === 'failed' || record.status === 'cancelled' 
+        ? 0 
+        : (record.credits_offered || 0)
     }));
 
     res.json({
@@ -363,7 +365,7 @@ const getUserProfileWithSubscription = async (req, res) => {
     
     const query = `
       SELECT 
-        p.name as current_plan,
+        COALESCE(p.name, 'Subscription Processing') as current_plan,
         CASE 
           WHEN s.status = 'active' THEN 'Payment Successful'
           ELSE s.status
@@ -371,13 +373,13 @@ const getUserProfileWithSubscription = async (req, res) => {
         CASE 
           WHEN s.subscription_interval = 'month' THEN 'Monthly'
           WHEN s.subscription_interval = 'year' THEN 'Yearly'
-          ELSE s.subscription_interval
+          ELSE COALESCE(s.subscription_interval, 'Pending')
         END as billing_cycle,
         s.current_period_end as next_renewal_date
       FROM subscriptions s
-      JOIN plans p ON p.product_id = s.plan_id
+      LEFT JOIN plans p ON p.product_id = s.plan_id
       WHERE s.user_id = $1 
-      AND s.status = 'active'
+      AND (s.status = 'active' OR s.status = 'Payment Processing (Credits Added)')
       ORDER BY s.created_at DESC
       LIMIT 1
     `;
@@ -442,7 +444,7 @@ const cancelSubscriptionRenewal = async (req, res) => {
       const updateQuery = `
         UPDATE subscriptions 
         SET 
-          status = 'expired',
+          status = 'cancelled',
           updated_at = NOW()
         WHERE subscription_id = $1 
         RETURNING *

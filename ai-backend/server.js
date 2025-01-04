@@ -11,6 +11,7 @@ const creditRoutes = require('./routes/creditRoutes');
 // const scrapeRouter = require('./routes/scrapeRouter');
 const emailRoutes = require('./routes/emailRoutes');
 const webhookRoutes = require('./routes/webhook');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 
@@ -58,7 +59,7 @@ app.use('/api/v1/images', imageRouter);
 app.use('/api/v1/credits', creditRoutes);
 app.use('/api/v1/email', emailRoutes);
 app.use('/api/v1/webhooks', webhookRoutes);
-
+app.use('/api/v1/payments', paymentRoutes);
 
 // PostgreSQL connection setup
 const pool = new Pool({

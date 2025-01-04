@@ -111,7 +111,7 @@ class WebhookService {
   }
 
   async processMandateWebhook(webhookData) {
-    const { customer, subscription_id, created_at } = webhookData.data;
+    const { customer, subscription_id } = webhookData.data;
 
     try {
       // First update customer_id in customers table
@@ -121,7 +121,7 @@ class WebhookService {
           customer_id = $1,
           updated_at = NOW()
         WHERE email = $2
-        RETURNING customer_id
+        RETURNING customer_id, user_id
       `;
 
       const customerResult = await db.query(updateCustomerQuery, [
@@ -133,39 +133,97 @@ class WebhookService {
         throw new Error(`Customer not found for email: ${customer.email}`);
       }
 
-      // Now check and create subscription
+      const user_id = customerResult.rows[0].user_id;
+
+      // Get plan_id and credits from checkout_sessions and plans
+      const getPlanQuery = `
+        SELECT cs.plan_id, p.credits
+        FROM checkout_sessions cs
+        JOIN plans p ON p.product_id = cs.plan_id
+        WHERE cs.user_id = $1 
+        ORDER BY cs.created_at DESC 
+        LIMIT 1
+      `;
+
+      const planResult = await db.query(getPlanQuery, [user_id]);
+      
+      if (planResult.rows.length === 0) {
+        throw new Error(`No checkout session found for user_id: ${user_id}`);
+      }
+
+      const { plan_id, credits } = planResult.rows[0];
+
+      // Check if subscription exists and credits were already added
       const checkQuery = `
-        SELECT subscription_id FROM subscriptions 
+        SELECT subscription_id, credits_added 
+        FROM subscriptions 
         WHERE subscription_id = $1
       `;
       const existingSubscription = await db.query(checkQuery, [subscription_id]);
 
       if (existingSubscription.rows.length > 0) {
-        console.log('Subscription already exists, skipping mandate processing');
-        return;
+        if (existingSubscription.rows[0].credits_added) {
+          console.log('Credits already added for this subscription, skipping');
+          return;
+        }
+        console.log('Subscription exists but credits not added, proceeding with credit addition');
       }
 
-      // Insert subscription using the customer_id we just updated
-      const insertQuery = `
-        INSERT INTO subscriptions (
-          customer_id,
+      // Begin transaction
+      await db.query('BEGIN');
+
+      try {
+        // Insert or update subscription
+        const upsertQuery = `
+          INSERT INTO subscriptions (
+            customer_id,
+            subscription_id,
+            status,
+            created_at,
+            updated_at,
+            user_id,
+            plan_id,
+            credits_added
+          )
+          VALUES ($1, $2, $3, NOW(), NOW(), $4, $5, true)
+          ON CONFLICT (subscription_id) 
+          DO UPDATE SET 
+            credits_added = true,
+            updated_at = NOW()
+          RETURNING *
+        `;
+
+        const values = [
+          customerResult.rows[0].customer_id,
           subscription_id,
-          status,
-          created_at,
-          updated_at
-        )
-        VALUES ($1, $2, $3, NOW(), NOW())
-        RETURNING *
-      `;
+          'Payment Processing (Credits Added)',
+          user_id,
+          plan_id
+        ];
 
-      const values = [
-        customerResult.rows[0].customer_id,  // Using the customer_id we just confirmed
-        subscription_id,
-        'Payment Processing'
-      ];
+        const result = await db.query(upsertQuery, values);
+        console.log('Subscription record updated:', result.rows[0]);
 
-      const result = await db.query(insertQuery, values);
-      console.log('Created new subscription with Processing status:', result.rows[0]);
+        // Add credits to user
+        const updateUserCreditsQuery = `
+          UPDATE "Users"
+          SET 
+            image_credits = COALESCE(image_credits, 0) + $1,
+            updated_at = NOW()
+          WHERE id = $2
+          RETURNING image_credits
+        `;
+
+        const creditsResult = await db.query(updateUserCreditsQuery, [credits, user_id]);
+        console.log(`Added ${credits} credits. New balance:`, creditsResult.rows[0].image_credits);
+
+        // Commit transaction
+        await db.query('COMMIT');
+
+      } catch (error) {
+        await db.query('ROLLBACK');
+        throw error;
+      }
 
     } catch (error) {
       console.error('Mandate processing error:', error);
@@ -252,114 +310,144 @@ class WebhookService {
 
       const planCredits = planResult.rows[0].credits;
 
-      // Check if subscription exists
+      // Check if subscription exists and if credits were added
       const checkQuery = `
-        SELECT id FROM subscriptions 
+        SELECT id, credits_added 
+        FROM subscriptions 
         WHERE subscription_id = $1
       `;
       const existingSubscription = await db.query(checkQuery, [subscription_id]);
 
-      if (existingSubscription.rows.length > 0) {
-        // Calculate period end based on subscription interval
-        const current_period_start = new Date();
-        let current_period_end = new Date();
-        
-        switch(payment_frequency_interval) {
-          case 'Month':
-            current_period_end.setMonth(current_period_end.getMonth() + 1);
-            break;
-          case 'Year':
-            current_period_end.setFullYear(current_period_end.getFullYear() + 1);
-            break;
-          default:
-            throw new Error(`Unsupported subscription interval: ${payment_frequency_interval}`);
-        }
+      // Begin transaction
+      await db.query('BEGIN');
 
-        const updateQuery = `
-          UPDATE subscriptions 
-          SET 
-            user_id = $1,
-            customer_id = $2,
-            plan_id = $3,
-            status = $4,
-            current_period_start = NOW(),
-            current_period_end = $5,
-            updated_at = NOW(),
-            subscription_interval = $6
-          WHERE subscription_id = $7
-          RETURNING *
-        `;
+      try {
+        if (existingSubscription.rows.length > 0) {
+          // Calculate period end based on subscription interval
+          const current_period_start = new Date();
+          let current_period_end = new Date();
+          
+          switch(payment_frequency_interval) {
+            case 'Month':
+              current_period_end.setMonth(current_period_end.getMonth() + 1);
+              break;
+            case 'Year':
+              current_period_end.setFullYear(current_period_end.getFullYear() + 1);
+              break;
+            default:
+              throw new Error(`Unsupported subscription interval: ${payment_frequency_interval}`);
+          }
 
-        const updateValues = [
-          user_id,
-          customer.customer_id,
-          product_id,
-          status,
-          current_period_end,
-          payment_frequency_interval,
-          subscription_id
-        ];
+          if (!existingSubscription.rows[0].credits_added && status === 'active') {
+            const updateQuery = `
+              UPDATE subscriptions 
+              SET 
+                status = $1,
+                credits_added = true,
+                current_period_start = $2,
+                current_period_end = $3,
+                subscription_interval = $4,
+                updated_at = NOW()
+              WHERE subscription_id = $5
+              RETURNING *
+            `;
 
-        const result = await db.query(updateQuery, updateValues);
-        console.log('Updated subscription to Payment Successful:', result.rows[0]);
+            const result = await db.query(updateQuery, [
+              status,
+              current_period_start,
+              current_period_end,
+              payment_frequency_interval,
+              subscription_id
+            ]);
+            console.log('Updated subscription and marked credits as added:', result.rows[0]);
 
-        // If subscription is active, update user credits
-        if (status === 'active') {
-          await this.addUserCredits(customer.customer_id, planCredits);
-        }
+            // Add credits if not already added
+            await this.addUserCredits(customer.customer_id, planCredits);
+          } else {
+            // Update without adding credits
+            const updateQuery = `
+              UPDATE subscriptions 
+              SET 
+                status = $1,
+                current_period_start = $2,
+                current_period_end = $3,
+                subscription_interval = $4,
+                updated_at = NOW()
+              WHERE subscription_id = $5
+              RETURNING *
+            `;
 
-        return;
-      } else {
-        // Create new subscription if it doesn't exist
-        const current_period_start = new Date();
-        let current_period_end = new Date();
-        
-        switch(payment_frequency_interval) {
-          case 'Month':
-            current_period_end.setMonth(current_period_end.getMonth() + 1);
-            break;
-          case 'Year':
-            current_period_end.setFullYear(current_period_end.getFullYear() + 1);
-            break;
-          default:
-            throw new Error(`Unsupported subscription interval: ${payment_frequency_interval}`);
-        }
+            const result = await db.query(updateQuery, [
+              status,
+              current_period_start,
+              current_period_end,
+              payment_frequency_interval,
+              subscription_id
+            ]);
+            console.log('Updated subscription details:', result.rows[0]);
+          }
+        } else {
+          // Calculate period end for new subscription
+          const current_period_start = new Date();
+          let current_period_end = new Date();
+          
+          switch(payment_frequency_interval) {
+            case 'Month':
+              current_period_end.setMonth(current_period_end.getMonth() + 1);
+              break;
+            case 'Year':
+              current_period_end.setFullYear(current_period_end.getFullYear() + 1);
+              break;
+            default:
+              throw new Error(`Unsupported subscription interval: ${payment_frequency_interval}`);
+          }
 
-        const insertQuery = `
-          INSERT INTO subscriptions (
+          // Create new subscription with credits_added flag
+          const insertQuery = `
+            INSERT INTO subscriptions (
+              user_id,
+              customer_id,
+              subscription_id,
+              plan_id,
+              status,
+              credits_added,
+              current_period_start,
+              current_period_end,
+              subscription_interval,
+              created_at,
+              updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+            RETURNING *
+          `;
+
+          const values = [
             user_id,
-            customer_id,
+            customer.customer_id,
             subscription_id,
-            plan_id,
+            product_id,
             status,
+            status === 'active',  // Set credits_added to true if status is active
             current_period_start,
             current_period_end,
-            subscription_interval,
-            created_at,
-            updated_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-          RETURNING *
-        `;
+            payment_frequency_interval
+          ];
 
-        const insertValues = [
-          user_id,
-          customer.customer_id,
-          subscription_id,
-          product_id,
-          status,
-          current_period_start,
-          current_period_end,
-          payment_frequency_interval
-        ];
+          const result = await db.query(insertQuery, values);
+          console.log('Created new subscription:', result.rows[0]);
 
-        const result = await db.query(insertQuery, insertValues);
-        console.log('Created new subscription with Payment Successful status:', result.rows[0]);
-
-        // Add credits if active
-        if (status === 'active') {
-          await this.addUserCredits(customer.customer_id, planCredits);
+          // Add credits if subscription is active
+          if (status === 'active') {
+            await this.addUserCredits(customer.customer_id, planCredits);
+          }
         }
+
+        // Commit transaction
+        await db.query('COMMIT');
+
+      } catch (error) {
+        await db.query('ROLLBACK');
+        throw error;
       }
 
     } catch (error) {

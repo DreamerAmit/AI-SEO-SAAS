@@ -165,6 +165,8 @@ const Dashboard = () => {
                 <span className="font-bold mb-2 text-sm text-gray-500">Payment Status:</span>{" "}
                 {subscriptionData?.subscription?.payment_status === 'Payment Successful' ? (
                   <span className="text-green-500 font-bold italic">Payment Successful</span>
+                ) : subscriptionData?.subscription?.payment_status === 'Payment Processing (Credits Added)' ? (
+                  <span className="text-amber-500 font-bold italic">Payment Processing (Credits Added)</span>
                 ) : (
                   subscriptionData?.subscription?.payment_status || 'Not Subscribed'
                 )}
@@ -228,7 +230,7 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row justify-between">
                     <div className="mb-2 sm:mb-0">
                       <p className={`text-sm font-medium ${
-                        transaction.status === 'failed' 
+                        getDisplayStatus(transaction.status) === 'failed' || getDisplayStatus(transaction.status) === 'cancelled'
                           ? 'text-red-600' 
                           : 'text-indigo-600'
                       }`}>
@@ -240,13 +242,15 @@ const Dashboard = () => {
                       <p className="text-xs text-gray-500 mt-1">
                         Transaction ID: {transaction.transactionId}
                       </p>
-                      <p className={`text-xs ${
-                        transaction.status === 'failed'
-                          ? 'text-red-500'
-                          : 'text-emerald-600'
-                      } font-medium mt-1`}>
-                        Credits Added: {transaction.creditsAdded}
-                      </p>
+                      {transaction.status !== 'Payment Processing (Credits Added)' && (
+                        <p className={`text-xs ${
+                          getDisplayStatus(transaction.status) === 'failed' || getDisplayStatus(transaction.status) === 'cancelled'
+                            ? 'text-red-500'
+                            : 'text-emerald-600'
+                        } font-medium mt-1`}>
+                          Credits Added: {transaction.creditsAdded}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </li>
@@ -302,6 +306,19 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       </button>
     </div>
   );
+};
+
+const getDisplayStatus = (status) => {
+  switch (status) {
+    case 'on_hold':
+      return 'failed';
+    case 'active':
+      return 'succeeded';
+    case 'Payment Processing (Credits Added)':
+      return 'Payment Processing (Credits Added)';
+    default:
+      return status;
+  }
 };
 
 export default Dashboard;
