@@ -181,20 +181,24 @@ const Dashboard = () => {
                 {formatDate(subscriptionData?.subscription?.next_renewal_date)}
               </p>
               <div className="flex gap-4">
-                <Link
-                  to="/plans"
-                  className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Add Credits
-                </Link>
-                {subscriptionData?.subscription?.payment_status === 'Payment Successful' && (
-                  <button 
-                    onClick={handleCancelRenewal}
-                    disabled={cancelSubscriptionMutation.isLoading}
-                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    {cancelSubscriptionMutation.isLoading ? "Cancelling..." : "Cancel Renewal"}
-                  </button>
+                {subscriptionData?.subscription?.payment_status !== 'Payment Processing (Credits Added)' && (
+                  <>
+                    <Link
+                      to="/plans"
+                      className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                      Add Credits
+                    </Link>
+                    {subscriptionData?.subscription?.payment_status === 'Payment Successful' && (
+                      <button 
+                        onClick={handleCancelRenewal}
+                        disabled={cancelSubscriptionMutation.isLoading}
+                        className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                      >
+                        {cancelSubscriptionMutation.isLoading ? "Cancelling..." : "Cancel Renewal"}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -230,11 +234,15 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row justify-between">
                     <div className="mb-2 sm:mb-0">
                       <p className={`text-sm font-medium ${
-                        getDisplayStatus(transaction.status) === 'failed' || getDisplayStatus(transaction.status) === 'cancelled'
-                          ? 'text-red-600' 
-                          : 'text-indigo-600'
+                        getDisplayStatus(transaction.status) === 'Payment Failed'
+                          ? 'text-red-600'
+                          : getDisplayStatus(transaction.status) === 'Subscription Cancelled' || 
+                            getDisplayStatus(transaction.status) === 'Plan Expired' || 
+                            transaction.status === 'Payment Processing (Credits Added)'
+                              ? 'text-amber-500'
+                              : 'text-indigo-600'
                       }`}>
-                        {transaction.title}
+                        {`${transaction.title.replace(/\s*\([^)]*\)/, '')} (${getDisplayStatus(transaction.status)})`}
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatDate(transaction.date)}
@@ -242,15 +250,15 @@ const Dashboard = () => {
                       <p className="text-xs text-gray-500 mt-1">
                         Transaction ID: {transaction.transactionId}
                       </p>
-                      {transaction.status !== 'Payment Processing (Credits Added)' && (
-                        <p className={`text-xs ${
-                          getDisplayStatus(transaction.status) === 'failed' || getDisplayStatus(transaction.status) === 'cancelled'
-                            ? 'text-red-500'
+                      <p className={`text-xs ${
+                        getDisplayStatus(transaction.status) === 'Payment Failed'
+                          ? 'text-red-500'
+                          : getDisplayStatus(transaction.status) === 'Subscription Cancelled' || transaction.status === 'Payment Processing (Credits Added)'
+                            ? 'text-amber-500'
                             : 'text-emerald-600'
-                        } font-medium mt-1`}>
-                          Credits Added: {transaction.creditsAdded}
-                        </p>
-                      )}
+                      } font-medium mt-1`}>
+                        Credits Offered: {transaction.creditsAdded}
+                      </p>
                     </div>
                   </div>
                 </li>
@@ -309,13 +317,19 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 };
 
 const getDisplayStatus = (status) => {
-  switch (status) {
-    case 'on_hold':
-      return 'failed';
+  switch (status?.toLowerCase()) {
     case 'active':
-      return 'succeeded';
+    case 'succeeded':
+      return 'Payment Successful';
+    case 'on_hold':
+    case 'failed':
+      return 'Payment Failed';
     case 'Payment Processing (Credits Added)':
       return 'Payment Processing (Credits Added)';
+    case 'cancelled':
+      return 'Subscription Cancelled';
+    case 'expired':
+      return 'Plan Expired';
     default:
       return status;
   }

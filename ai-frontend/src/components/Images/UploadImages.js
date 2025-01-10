@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { getUserId } from '../../AuthContext/AuthContext';
 import { FaCloudUploadAlt } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 
 const UploadImages = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -47,7 +48,35 @@ const UploadImages = () => {
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);
-    setSelectedFiles(files);
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    
+    const oversizedFiles = files.filter(file => file.size > maxSize);
+    
+    if (oversizedFiles.length > 0) {
+      // Show error for oversized files
+      toast.error(
+        <div>
+          <p>The following files exceed 5MB: Please upload images under 5MB</p>
+          <ul className="mt-2 list-disc pl-4">
+            {oversizedFiles.map(file => (
+              <li key={file.name}>{file.name}</li>
+            ))}
+          </ul>
+        </div>,
+        {
+          duration: 10000,
+          style: {
+            maxWidth: '500px',
+          }
+        }
+      );
+      
+      // Only keep files under 5MB
+      const validFiles = files.filter(file => file.size <= maxSize);
+      setSelectedFiles(validFiles);
+    } else {
+      setSelectedFiles(files);
+    }
   };
 
   const handlePromptChange = (event) => {
@@ -56,6 +85,14 @@ const UploadImages = () => {
 
   const handleGenerateAltText = async () => {
     try {
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      const oversizedFiles = selectedFiles.filter(file => file.size > maxSize);
+      
+      if (oversizedFiles.length > 0) {
+        toast.error('Some files are too large. Please remove files over 5MB.');
+        return;
+      }
+
       setUploading(true);
       setError(null);
       const userId = getUserId();
@@ -214,7 +251,7 @@ const UploadImages = () => {
 
       <div className="mt-8 bg-green-100 border-l-4 border-green-500 p-4">
         <h3 className="font-bold">Note</h3>
-        <p>When you generate alt text for uploaded images, they will be processed in the background and added to your library when done. Some images may not be processed if they are an unsupported file type.</p>
+        <p>When you generate alt text for uploaded images, they will be processed in the background and added to your library when done. Some images may not be processed if they are an unsupported file type or image size is greater than 5MB.</p>
       </div>
     </div>
   );

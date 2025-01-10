@@ -100,7 +100,7 @@ class WebhookService {
             processed = false
           WHERE id = $1
         `;
-        await db.query(updateWebhookErrorQuery, [webhookId, processingError.message]);
+        await db.query(updateWebhookErrorQuery, [webhookId]);
         throw processingError;
       }
 
@@ -209,7 +209,7 @@ class WebhookService {
           UPDATE "Users"
           SET 
             image_credits = COALESCE(image_credits, 0) + $1,
-            updated_at = NOW()
+            "updatedAt" = NOW()
           WHERE id = $2
           RETURNING image_credits
         `;
