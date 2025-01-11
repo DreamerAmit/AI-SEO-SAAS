@@ -27,6 +27,8 @@ import ScrapedImages from './components/Images/ScrapedImages';
 import UploadImages from './components/Images/UploadImages';
 import './App.css';  // or wherever your global CSS file is located
 import { Toaster } from 'react-hot-toast';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function App() {
   //custom auth hook
@@ -97,6 +99,17 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </GoogleOAuthProvider>
+      <ToastContainer 
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </>
   );
 }

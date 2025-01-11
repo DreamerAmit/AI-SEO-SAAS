@@ -10,6 +10,12 @@ const path = require('path');
 
 
 const imageRouter = express.Router();
+
+const BATCH_SIZE = 15;
+const DELAY_BETWEEN_IMAGES = 600; // 0.6 seconds
+const DELAY_BETWEEN_BATCHES = 2000; // 2 seconds
+const MAX_RETRIES = 3;
+
 // const dbPool = new Pool({
 //   user: 'env.DB_USER',
 //   host: 'env.DB_HOST',
@@ -51,69 +57,94 @@ imageRouter.post('/upload-and-generate', upload.array('images'), uploadAndGenera
 
 
 imageRouter.post('/generate-alt-text', async (req, res) => {
-  console.log('Received request to generate alt text');
-  const { selectedImages, userId, chatGptPrompt } = req.body; // Add chatGptPrompt here
-
+  const { selectedImages, userId, chatGptPrompt } = req.body;
+  
   try {
-    const generatedImages = await Promise.all(selectedImages.map(async (image) => {
-      // OpenAI API call
-      console.log('Sending request to OpenAI API')
-      const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { 
-                type: "text", 
-                text: `Generate alt text for this image by following the prompt: ${chatGptPrompt}`
-                
+    if (!selectedImages?.length) {
+      return res.status(400).json({ error: 'No images provided' });
+    }
+
+    const totalBatches = Math.ceil(selectedImages.length / BATCH_SIZE);
+    const estimatedSeconds = Math.ceil(
+      (selectedImages.length * DELAY_BETWEEN_IMAGES + 
+       (totalBatches - 1) * DELAY_BETWEEN_BATCHES) / 1000
+    );
+
+    // Process images in batches
+    const results = [];
+    const errors = [];
+    let processedCount = 0;
+
+    for (let i = 0; i < selectedImages.length; i += BATCH_SIZE) {
+      const batch = selectedImages.slice(i, i + BATCH_SIZE);
+      
+      // Process batch
+      const batchPromises = batch.map(async (image, index) => {
+        try {
+          // Stagger requests within batch
+          await new Promise(resolve => setTimeout(resolve, index * DELAY_BETWEEN_IMAGES));
+          
+          const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: "gpt-4-vision-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: chatGptPrompt },
+                  { type: "image_url", image_url: { url: image.src } }
+                ],
               },
-              { type: "image_url", image_url: { url: image.src } }
             ],
-          },
-        ],
-        max_tokens: 500,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
+            max_tokens: 500,
+          }, {
+            headers: {
+              'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            timeout: 30000
+          });
+
+          const altText = openAIResponse.data.choices[0].message.content.trim();
+          
+          // Store in database
+          const result = await db.query(
+            'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
+            {
+              replacements: { src: image.src, altText: altText, userId: userId },
+              type: QueryTypes.INSERT
+            }
+          );
+
+          processedCount++;
+          results.push(result[0]);
+
+          return result[0];
+        } catch (error) {
+          console.error(`Failed to process image: ${image.src}`, error);
+          errors.push({ src: image.src, error: error.message });
+          return null;
         }
       });
-      console.log(chatGptPrompt);
-      const altText = openAIResponse.data.choices[0].message.content.trim();
-      console.log('Image source:', image.src);
-      console.log('Generated AltText:',altText);
-      
-      // Store in PostgreSQL
-      try {
-        console.log('Inserting into database:', image.src, altText);
-        const result = await db.query(
-          'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
-          {
-            replacements: { src: image.src, altText: altText, userId: userId },
-            type: QueryTypes.INSERT
-          }
-        );
-        console.log('Query result:', result);
-        return result[0]; // Sequelize returns an array for INSERT queries
-      } catch (error) {
-        console.error('Error executing database query:', error);
-        throw error;
+
+      await Promise.all(batchPromises);
+
+      // Delay between batches
+      if (i + BATCH_SIZE < selectedImages.length) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
+    }
 
-      console.log('Image source:', image.src);
-      console.log('Alt text:', altText);
+    res.json({
+      success: true,
+      processed: processedCount,
+      failed: errors.length,
+      results: results.filter(Boolean),
+      errors
+    });
 
-     
-
-      return result.rows[0];
-    }));
-
-    res.json(generatedImages);
   } catch (error) {
-    console.error('Error generating alt text:', error);
-    res.status(500).json({ error: 'An error occurred while generating alt text' });
+    console.error('Error processing images:', error);
+    res.status(500).json({ error: 'Failed to process images' });
   }
 });
 

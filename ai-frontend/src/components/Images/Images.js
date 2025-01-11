@@ -5,6 +5,7 @@ import { BsClipboard } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { getUserId } from '../../AuthContext/AuthContext';
+import { toast } from 'react-toastify';
 
 const Images = () => {
   const [images, setImages] = useState([]);
@@ -14,6 +15,9 @@ const Images = () => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [itemsPerPage, setItemsPerPage] = useState(25); // New state for items per page
   const [currentPage, setCurrentPage] = useState(1); // New state for current page
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [processedCount, setProcessedCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -113,6 +117,47 @@ const Images = () => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Images');
     XLSX.writeFile(workbook, 'exported_images.xlsx');
+  };
+
+  const handleImageProcessing = async (images) => {
+    if (!images?.length) {
+      toast.warning('Please select images to process');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setProgress(0);
+      setProcessedCount(0);
+
+      const response = await axios.post('/api/v1/generate-alt-text', {
+        selectedImages: images,
+        chatGptPrompt: "Generate descriptive alt text for this image"
+      });
+
+      if (response.data.success) {
+        setProgress(100);
+        await fetchImages(); // Make sure this exists in your component
+        
+        toast.success(
+          `Successfully processed ${response.data.processed} images${
+            response.data.failed > 0 
+              ? `. ${response.data.failed} images failed.` 
+              : ''
+          }`
+        );
+      } else {
+        toast.error('Failed to process images');
+      }
+    } catch (error) {
+      console.error('Error processing images:', error);
+      toast.error('Error processing images');
+    } finally {
+      setIsProcessing(false);
+      setProgress(0);
+      setProcessedCount(0);
+      setSelectedImages([]);
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -231,6 +276,32 @@ const Images = () => {
           </select>
         </div>
       </div>
+      {/* <button
+        onClick={() => handleImageProcessing(selectedImages)}
+        disabled={!selectedImages.length || isProcessing}
+        className={`bg-indigo-600 text-white px-4 py-2 rounded flex items-center ${
+          (!selectedImages.length || isProcessing) ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+      >
+        {isProcessing ? 'Processing...' : 'Process Selected Images'}
+      </button> */}
+
+      {isProcessing && (
+        <div className="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg z-50">
+          <div className="text-sm font-medium mb-2">
+            Processing {selectedImages.length} images...
+          </div>
+          <div className="w-64 bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            {processedCount} of {selectedImages.length} completed
+          </div>
+        </div>
+      )}
     </div>
   );
 };
