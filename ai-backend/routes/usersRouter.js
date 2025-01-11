@@ -85,7 +85,7 @@ usersRouter.post("/register", async (req, res, next) => {
 usersRouter.get("/confirm-email/:token", async (req, res) => {
   try {
     
-    const { token } = req.params.token;
+    const token = req.params.token;
     console.log('Received token:', token);
 
     // First, find the user with this token
