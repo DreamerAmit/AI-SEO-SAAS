@@ -35,7 +35,7 @@ export default function AboutUs() {
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:mx-0">
           <h2 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-            Pic2Alt - Quick AltText Generation using AI
+            Pic2Alt - Quick Image to Text Generation using AI
           </h2>
           <p className="mt-6 text-lg leading-8 text-gray-300">
           Pic2Alt was built to help customers solve a very specific problem ie to generate AltText for multiple images within a fraction of time and that too automatically, eliminating the need of manual copywriter to see the image, think and then write an AltText that may be SEO friendly.

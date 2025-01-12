@@ -9,76 +9,95 @@ export default function Home() {
         <div className="relative isolate overflow-hidden pt-14">
           <img
             src={ai}
-            alt=" ai"
-            className="absolute inset-0 -z-10 h-full w-full object-cover"
+            alt="AI background"
+            className="absolute inset-0 -z-10 h-full w-full object-cover opacity-20"
           />
           <div className="absolute inset-0 -z-10 bg-black bg-opacity-90"></div>
-          <div
-            className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
-            aria-hidden="true"
-          >
-            <div
-              className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-              style={{
-                clipPath:
-                  "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
-              }}
-            />
-          </div>
-          <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
-            <div className="hidden sm:mb-8 sm:flex sm:justify-center">
-              {/* 
-              <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-gray-400 ring-1 ring-white/10 hover:ring-white/20">
-                AI Content Generator full release{" "}
-                <a href="#" className="font-semibold text-white">
-                  <span className="absolute inset-0" aria-hidden="true" />
-                  Read more <span aria-hidden="true">&rarr;</span>
-                </a>
-              </div>
-              */}
-            </div>
+
+          {/* Hero Section */}
+          <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:py-40">
             <div className="text-center">
-              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                Quick AI Alt Text Generator
+              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl mb-8">
+                Transform Multiple Images to Text{' '}
+                <span className="text-indigo-500">in Minutes</span>
               </h1>
-              <p className="mt-6 text-lg leading-8 text-gray-300">
-                Scrape Pages of your website, Generate Alt Text for Images using AI, Apply Alt Text to Images and improve your site's SEO  and accessibility.
+              
+              {/* Feature Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+                  <div className="text-indigo-400 text-4xl mb-4">🖼️</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Alt Text Generation</h3>
+                  <p className="text-gray-300">
+                    Generate SEO-friendly alt text for multiple images instantly
+                  </p>
+                </div>
+                
+                <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+                  <div className="text-indigo-400 text-4xl mb-4">📱</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Instagram Captions</h3>
+                  <p className="text-gray-300">
+                    Create engaging Instagram captions from your images in bulk
+                  </p>
+                </div>
+                
+                <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
+                  <div className="text-indigo-400 text-4xl mb-4">💼</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">LinkedIn Posts</h3>
+                  <p className="text-gray-300">
+                    Convert images to professional LinkedIn post content
+                  </p>
+                </div>
+              </div>
+
+              {/* Value Proposition */}
+              <p className="mt-6 text-lg leading-8 text-gray-300 max-w-3xl mx-auto">
+                Process up to 50 images simultaneously. Save hours of manual work with our 
+                AI-powered image analysis. Perfect for social media managers, content creators, 
+                and web developers.
               </p>
+
+              {/* CTA Buttons */}
               <div className="mt-10 flex items-center justify-center gap-x-6">
                 <Link
                   to="/register"
-                  className="rounded-md bg-indigo-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  className="rounded-md bg-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                 >
                   Start Free Trial
-                </Link>
-                <Link
-                  to="free-plan"
-                  className="text-sm font-semibold leading-6 text-white"
-                >
-                  {/* 
-                  Learn more <span aria-hidden="true">→</span>
-                  */}
                 </Link>
               </div>
             </div>
           </div>
-          <div
-            className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]"
-            aria-hidden="true"
-          >
-            <div
-              className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"
-              style={{
-                clipPath:
-                  "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
-              }}
-            />
+
+          {/* Stats Section */}
+          <div className="bg-white/5 py-12 backdrop-blur-sm">
+            <div className="mx-auto max-w-7xl px-6">
+              <dl className="grid grid-cols-1 gap-x-8 gap-y-16 text-center lg:grid-cols-3">
+                <div className="mx-auto flex max-w-xs flex-col gap-y-4">
+                  <dt className="text-base leading-7 text-gray-300">Processing Speed</dt>
+                  <dd className="order-first text-3xl font-semibold tracking-tight text-white">
+                    50+ Images/Minute
+                  </dd>
+                </div>
+                <div className="mx-auto flex max-w-xs flex-col gap-y-4">
+                  <dt className="text-base leading-7 text-gray-300">Accuracy Rate</dt>
+                  <dd className="order-first text-3xl font-semibold tracking-tight text-white">
+                    99%
+                  </dd>
+                </div>
+                <div className="mx-auto flex max-w-xs flex-col gap-y-4">
+                  <dt className="text-base leading-7 text-gray-300">Time Saved</dt>
+                  <dd className="order-first text-3xl font-semibold tracking-tight text-white">
+                    5hrs/Week
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </div>
       </div>
-      {/* Homepage features */}
+
+      {/* Keep your existing components */}
       <HomeFeatures />
-      {/* Homepage CTA */}
       <FreeTrial />
     </>
   );
