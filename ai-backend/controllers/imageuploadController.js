@@ -81,13 +81,15 @@ const uploadAndGenerateAltText = async (req, res) => {
         const base64Image = imageBuffer.toString('base64');
 
         console.log(`Generating alt text for: ${file.filename}`);
+        const defaultAltTextPrompt = "Generate alt text for this image in less than 10 words.";
         const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
           model: "gpt-4o-mini",  // Updated model name
           messages: [
             {
               role: "user",
               content: [
-                { type: "text", text: chatGptPrompt },
+                { type: "text", 
+                  text: chatGptPrompt || defaultAltTextPrompt  },
                 { 
                   type: "image_url", 
                   image_url: { 

@@ -57,7 +57,7 @@ imageRouter.post('/upload-and-generate', upload.array('images'), uploadAndGenera
 
 
 imageRouter.post('/generate-alt-text', async (req, res) => {
-  const { selectedImages, userId, chatGptPrompt } = req.body;
+  const { selectedImages, userId, chatGptPrompt} = req.body;
   
   try {
     if (!selectedImages?.length) {
@@ -84,14 +84,23 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
           // Stagger requests within batch
           await new Promise(resolve => setTimeout(resolve, index * DELAY_BETWEEN_IMAGES));
           
+          // Default prompt for alt text generation
+          const defaultAltTextPrompt = "Generate alt text for this image in less than 10 words.";
+          
           const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-            model: "gpt-4-vision-preview",
+            model: "gpt-4o-mini",
             messages: [
               {
                 role: "user",
                 content: [
-                  { type: "text", text: chatGptPrompt },
-                  { type: "image_url", image_url: { url: image.src } }
+                  { 
+                    type: "text", 
+                    text:  chatGptPrompt || defaultAltTextPrompt 
+                  },
+                  { 
+                    type: "image_url", 
+                    image_url: { url: image.src } 
+                  }
                 ],
               },
             ],
@@ -104,27 +113,33 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
             timeout: 30000
           });
 
-          const altText = openAIResponse.data.choices[0].message.content.trim();
+          const generatedText = openAIResponse.data.choices[0].message.content.trim();
+          console.log("Generated text",generatedText);
           
-          // Store in database
-          const result = await db.query(
-            'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
-            {
-              replacements: { src: image.src, altText: altText, userId: userId },
-              type: QueryTypes.INSERT
-            }
-          );
-
-          processedCount++;
-          results.push(result[0]);
-
-          return result[0];
+          try {
+            const result = await db.query(
+                'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
+                {
+                    replacements: { src: image.src, altText: generatedText, userId: userId },
+                    type: QueryTypes.INSERT
+                }
+            );
+            processedCount++;
+            results.push(result[0]);
+            console.log("Row inserted",result[0]);
+            return result[0];
         } catch (error) {
+            console.error(`Failed to process image: ${image.src}`, error);
+            errors.push({ src: image.src, error: error.message });
+            return null;
+        }
+
+      } catch (error) {
           console.error(`Failed to process image: ${image.src}`, error);
           errors.push({ src: image.src, error: error.message });
           return null;
         }
-      });
+    });
 
       await Promise.all(batchPromises);
 
