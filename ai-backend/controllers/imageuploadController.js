@@ -69,7 +69,7 @@ const uploadAndGenerateAltText = async (req, res) => {
     }
 
     ensureUploadDir();
-    const chatGptPrompt = req.body.chatGptPrompt || "Generate a 50-word alt text for this image.";
+   const chatGptPrompt = req.body.chatGptPrompt || "Generate a 10-word alt text for this image.";
     const results = [];
 
     // Process images
@@ -81,7 +81,7 @@ const uploadAndGenerateAltText = async (req, res) => {
         const base64Image = imageBuffer.toString('base64');
 
         console.log(`Generating alt text for: ${file.filename}`);
-        const defaultAltTextPrompt = "Generate alt text for this image in less than 10 words.";
+        const defaultAltTextPrompt = "Generate alt text in less than 10 words.";
         const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
           model: "gpt-4o-mini",  // Updated model name
           messages: [

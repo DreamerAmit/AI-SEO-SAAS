@@ -24,7 +24,7 @@ openAIRouter.post(
                 content: [
                   {
                     type: "text",
-                    text: "Generate a concise, informative alt text for this image, suitable for web accessibility. Describe the main elements and any text visible in the image."
+                    text: "Generate alt text in less than 10 words."
                   },
                   {
                     type: "image_url",
