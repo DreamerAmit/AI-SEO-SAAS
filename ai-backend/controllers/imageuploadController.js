@@ -52,13 +52,36 @@ const upload = multer({
     }
 });
 
+const copyFile = async (source, destination) => {
+    try {
+        // Use streams for reliable file copying
+        const readStream = fsSync.createReadStream(source);
+        const writeStream = fsSync.createWriteStream(destination);
+        
+        return new Promise((resolve, reject) => {
+            readStream.on('error', reject);
+            writeStream.on('error', reject);
+            writeStream.on('finish', resolve);
+            readStream.pipe(writeStream);
+        });
+    } catch (error) {
+        console.error('File copy error:', error);
+        throw error;
+    }
+};
+
 const handleFileUpload = async (file) => {
     try {
         if (isProduction) {
-            // In production, just return the URL (no deletion yet)
+            // In production, copy file directly to server path
+            const sourceFilePath = file.path;
+            const destinationFilePath = path.join(UPLOAD_PATH, file.filename);
+            await copyFile(sourceFilePath, destinationFilePath);
+            console.log('File copied to server path:', destinationFilePath);
+            
             return `https://pic2alt.com/uploads/${file.filename}`;
         } else {
-            // In development, upload via SFTP but don't delete yet
+            // In development, upload via SFTP
             const sftp = new Client();
             await sftp.connect({
                 host: process.env.SFTP_HOST,
@@ -69,6 +92,7 @@ const handleFileUpload = async (file) => {
 
             await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
             await sftp.end();
+            console.log('File uploaded via SFTP:', file.filename);
 
             return `https://pic2alt.com/uploads/${file.filename}`;
         }
