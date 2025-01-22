@@ -12,6 +12,8 @@ const creditRoutes = require('./routes/creditRoutes');
 const emailRoutes = require('./routes/emailRoutes');
 const webhookRoutes = require('./routes/webhook');
 const paymentRoutes = require('./routes/paymentRoutes');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
@@ -35,6 +37,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Test route
 app.get('/api/test', (req, res) => {
@@ -125,5 +128,30 @@ app.use((req, res, next) => {
   res.status(404).send('Not Found');
 });
 
+// Ensure uploads directory exists with absolute path
+const uploadDir = path.join(process.cwd(), 'uploads');
+console.log('Upload directory path:', uploadDir);
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log('Created uploads directory');
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(uploadDir));
+
+// Add a test endpoint
+app.get('/test-upload-dir', (req, res) => {
+    fs.readdir(uploadDir, (err, files) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({
+            uploadDir,
+            files,
+            exists: fs.existsSync(uploadDir)
+        });
+    });
+});
 
 // app.use('/api/scrape', scrapeRouter);

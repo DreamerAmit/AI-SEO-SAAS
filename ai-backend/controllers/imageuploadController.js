@@ -5,6 +5,10 @@ const axios = require('axios');
 const db = require('../config/database');
 const path = require('path');
 const { QueryTypes } = require('sequelize');
+const multer = require('multer');
+const Client = require('ssh2-sftp-client');
+const isProduction = process.env.NODE_ENV === 'production';
+const UPLOAD_PATH = '/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads/';
 
 // Function to ensure upload directory exists
 const ensureUploadDir = () => {
@@ -20,158 +24,289 @@ const ensureUploadDir = () => {
   }
 };
 
+// Multer configuration
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadPath = isProduction 
+            ? UPLOAD_PATH  // Production: Direct server path
+            : './uploads/'; // Development: Local path
+            
+        if (!fsSync.existsSync(uploadPath)) {
+            fsSync.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        cb(null, uploadPath);
+    },
+    filename: function (req, file, cb) {
+        const uniqueName = Date.now() + '-' + file.originalname;
+        cb(null, uniqueName);
+    }
+});
+
+// Create multer instance with 'images' field name to match frontend
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB per file
+        files: 100
+    }
+});
+
+const handleFileUpload = async (file) => {
+    try {
+        if (isProduction) {
+            // In production, file is already in the correct location
+            return `https://pic2alt.com/uploads/${file.filename}`;
+        } else {
+            // In development, upload via SFTP
+            const sftp = new Client();
+            await sftp.connect({
+                host: process.env.SFTP_HOST,
+                port: 22,
+                username: process.env.SFTP_USER,
+                password: process.env.SFTP_PASSWORD
+            });
+
+            // Upload to server
+            await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
+            await sftp.end();
+
+            // Delete local file after successful upload
+            await fs.unlink(file.path);
+            console.log('Deleted local file:', file.path);
+
+            return `https://pic2alt.com/uploads/${file.filename}`;
+        }
+    } catch (error) {
+        console.error('File upload error:', error);
+        // Try to clean up local file even if upload failed
+        try {
+            await fs.unlink(file.path);
+            console.log('Cleaned up local file after error:', file.path);
+        } catch (unlinkError) {
+            console.error('Failed to delete local file:', unlinkError);
+        }
+        throw error;
+    }
+};
+
 const uploadAndGenerateAltText = async (req, res) => {
-  try {
-    // Debug logs to see what we're receiving
-    console.log('Request body:', req.body);
-    console.log('Files:', req.files);
+    try {
+        console.log('Starting upload process with files:', req.files?.length);
+        const userId = req.body.userId;
+        
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User ID is required'
+            });
+        }
 
-    // Get userId from FormData
-    const userId = req.body.userId;
-    console.log('Received userId:', userId);
+        const userIdInt = parseInt(userId, 10);
+        const files = req.files;
 
-    if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: 'User ID is required'
-      });
-    }
+        // Validate files
+        if (!files || files.length === 0) {
+            console.error('No files received');
+            return res.status(400).json({
+                success: false,
+                message: 'No files uploaded'
+            });
+        }
 
-    // Convert userId to integer if it's coming as string from FormData
-    const userIdInt = parseInt(userId, 10);
-    
-    // Get user's remaining credits
-    const creditsResponse = await db.query(
-      'SELECT image_credits FROM "Users" WHERE id = :userId',
-      {
-        replacements: { userId: userIdInt },
-        type: QueryTypes.SELECT
-      }
-    );
-
-    if (!creditsResponse || creditsResponse.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'User not found' 
-      });
-    }
-
-    const remainingCredits = creditsResponse[0].image_credits;
-    const files = req.files;
-    console.log(`User has ${remainingCredits} credits, attempting to process ${files.length} images`);
-
-    // Check if user has enough credits
-    if (files.length > remainingCredits) {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Insufficient credits. You have ${remainingCredits} credits but trying to process ${files.length} images.` 
-      });
-    }
-
-    ensureUploadDir();
-   const chatGptPrompt = req.body.chatGptPrompt || "Generate a 10-word alt text for this image.";
-    const results = [];
-
-    // Process images
-    for (const file of files) {
-      try {
-        console.log(`Processing image: ${file.filename}`);
-        const filePath = path.join(process.env.UPLOAD_DIR || './uploads/', file.filename);
-        const imageBuffer = await fs.readFile(filePath);
-        const base64Image = imageBuffer.toString('base64');
-
-        console.log(`Generating alt text for: ${file.filename}`);
-        const defaultAltTextPrompt = "Generate alt text in less than 10 words.";
-        const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-          model: "gpt-4o-mini",  // Updated model name
-          messages: [
+        // Log credit check
+        console.log('Checking credits for user:', userIdInt);
+        const creditsResponse = await db.query(
+            'SELECT image_credits FROM "Users" WHERE id = :userId',
             {
-              role: "user",
-              content: [
-                { type: "text", 
-                  text: chatGptPrompt || defaultAltTextPrompt  },
-                { 
-                  type: "image_url", 
-                  image_url: { 
-                    url: `data:image/${file.mimetype};base64,${base64Image}` 
-                  } 
-                }
-              ],
-            },
-          ],
-          max_tokens: 500,
-        }, {
-          headers: {
-            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const altText = openAIResponse.data.choices[0].message.content.trim();
-        console.log('Generated AltText:', altText);
-
-        // Save to database
-        const result = await db.query(
-          'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
-          {
-            replacements: { 
-              src: file.filename, 
-              altText: altText, 
-              userId: userIdInt 
-            },
-            type: QueryTypes.INSERT
-          }
+                replacements: { userId: userIdInt },
+                type: QueryTypes.SELECT
+            }
         );
 
-        results.push(result[0]);
-        await fs.unlink(filePath);
-        console.log(`Successfully processed: ${file.filename}`);
+        if (!creditsResponse?.length) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'User not found' 
+            });
+        }
 
-      } catch (error) {
-        console.error(`Error processing image ${file.filename}:`, error);
-      }
+        const remainingCredits = creditsResponse[0].image_credits;
+        console.log('Remaining credits:', remainingCredits);
+
+        if (files.length > remainingCredits) {
+            return res.status(400).json({ 
+                success: false, 
+                message: `Insufficient credits. You have ${remainingCredits} credits but trying to process ${files.length} images.` 
+            });
+        }
+
+        const chatGptPrompt = req.body.chatGptPrompt || "Generate a 10-word alt text for this image.";
+        const results = [];
+        let processedCount = 0;
+
+        // Process images in parallel with temporary URLs
+        const processImage = async (file) => {
+            let filePath;
+            try {
+                console.log('Starting to process file:', file.filename);
+                
+                // First, copy the file from temporary upload location to public directory
+                const sourceFilePath = path.join(process.cwd(), 'uploads', file.filename);
+                const publicFilePath = path.join('/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads', file.filename);
+                
+                // Ensure the directory exists
+                const publicDir = path.dirname(publicFilePath);
+                if (!fsSync.existsSync(publicDir)) {
+                    fsSync.mkdirSync(publicDir, { recursive: true });
+                }
+
+                // Copy file to public directory
+                await fs.copyFile(sourceFilePath, publicFilePath);
+                console.log('File copied to public directory:', publicFilePath);
+
+                // Now use the public URL for OpenAI API
+                const imageUrl = await handleFileUpload(file);
+                console.log('Image URL:', imageUrl);
+
+                const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+                    model: "gpt-4o-mini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: chatGptPrompt },
+                                { 
+                                    type: "image_url", 
+                                    image_url: { url: imageUrl }
+                                }
+                            ],
+                        },
+                    ],
+                    max_tokens: 100,
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 15000
+                });
+
+                console.log('OpenAI API response received');
+                const altText = openAIResponse.data.choices[0].message.content.trim();
+                console.log('Generated alt text:', altText);
+
+                // Save to database
+                const result = await db.query(
+                    'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
+                    {
+                        replacements: { 
+                            src: file.filename, 
+                            altText: altText, 
+                            userId: userIdInt 
+                        },
+                        type: QueryTypes.INSERT
+                    }
+                );
+
+                console.log('Database insert successful:', result[0]);
+                processedCount++;
+
+                // After successful processing and database save
+                if (isProduction) {
+                    // In production, delete from server path
+                    try {
+                        await fs.unlink(path.join(UPLOAD_PATH, file.filename));
+                        console.log('Deleted server file:', file.filename);
+                    } catch (unlinkError) {
+                        console.error('Failed to delete server file:', unlinkError);
+                    }
+                }
+
+                return result[0];
+            } catch (error) {
+                console.error('Error processing file:', error);
+                // Cleanup on error
+                try {
+                    if (isProduction) {
+                        await fs.unlink(path.join(UPLOAD_PATH, file.filename));
+                    }
+                } catch (unlinkError) {
+                    console.error('Failed to delete file during error cleanup:', unlinkError);
+                }
+                return null;
+            }
+        };
+
+        // Process all files in parallel
+        console.log('Starting parallel processing of files');
+        const processedResults = await Promise.all(files.map(processImage));
+        console.log('Processed results:', processedResults);
+        results.push(...processedResults.filter(Boolean));
+
+        // Update user credits in a single transaction
+        if (processedCount > 0) {
+            console.log('Updating user credits');
+            const deductResult = await db.query(
+                'UPDATE "Users" SET image_credits = image_credits - :amount WHERE id = :userId AND image_credits >= :amount RETURNING image_credits',
+                {
+                    replacements: {
+                        amount: processedCount,
+                        userId: userIdInt
+                    },
+                    type: QueryTypes.UPDATE
+                }
+            );
+
+            if (!deductResult?.[0]?.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Failed to deduct credits"
+                });
+            }
+
+            res.json({
+                success: true,
+                results,
+                message: `Successfully processed ${processedCount} images`,
+                remainingCredits: deductResult[0][0].image_credits,
+                errors: processedResults.filter(r => !r).length > 0 ? 
+                        processedResults.filter(r => !r).map(() => ({ error: 'Processing failed' })) : 
+                        undefined
+            });
+        } else {
+            console.error('No images were processed successfully');
+            res.status(400).json({
+                success: false,
+                message: "No images were successfully processed"
+            });
+        }
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        // Cleanup any remaining files
+        if (req.files) {
+            for (const file of req.files) {
+                try {
+                    const filePath = isProduction ? 
+                        path.join(UPLOAD_PATH, file.filename) : 
+                        file.path;
+                    await fs.unlink(filePath);
+                    console.log('Cleaned up file after error:', file.filename);
+                } catch (unlinkError) {
+                    console.error('Failed to delete file during error cleanup:', unlinkError);
+                }
+            }
+        }
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to process images',
+            error: error.message 
+        });
     }
-
-    // Deduct credits using the integer userId
-    const deductResult = await db.query(
-      'UPDATE "Users" SET image_credits = image_credits - :amount WHERE id = :userId AND image_credits >= :amount RETURNING *',
-      {
-        replacements: {
-          amount: files.length,
-          userId: userIdInt
-        },
-        type: QueryTypes.UPDATE
-      }
-    );
-
-    console.log('Credit deduction result:', deductResult);
-
-    // Check if the update was successful
-    if (!deductResult || !deductResult[0] || deductResult[0].length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Failed to deduct credits"
-      });
-    }
-
-    // Return success response with the first row of the update result
-    res.json({
-      success: true,
-      results,
-      message: `Successfully processed ${files.length} images`,
-      remainingCredits: deductResult[0][0].image_credits // Access the first row of the result
-    });
-
-  } catch (error) {
-    console.error('Error in upload-and-generate:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to process images',
-      error: error.message 
-    });
-  }
 };
 
 module.exports = {
-  uploadAndGenerateAltText
+    upload,  // Export the multer instance
+    uploadAndGenerateAltText  // Export the controller function
 };

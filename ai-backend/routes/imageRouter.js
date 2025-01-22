@@ -4,7 +4,7 @@ const axios = require('axios');
 const db = require('../config/database');
 const {QueryTypes} = require('sequelize');
 const multer = require('multer');
-const { uploadAndGenerateAltText } = require('../controllers/imageuploadController');
+const { upload, uploadAndGenerateAltText } = require('../controllers/imageuploadController');
 const fs = require('fs');
 const path = require('path');
 
@@ -42,19 +42,8 @@ if (!fs.existsSync(uploadDir)) {
   }
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
-const upload = multer({ storage: storage });
-
-imageRouter.post('/upload-and-generate', upload.array('images'), uploadAndGenerateAltText);
-
+// Use as separate middleware and controller function
+imageRouter.post('/upload-and-generate', upload.array('images', 100), uploadAndGenerateAltText);
 
 imageRouter.post('/generate-alt-text', async (req, res) => {
   const { selectedImages, userId, chatGptPrompt} = req.body;
@@ -85,7 +74,7 @@ imageRouter.post('/generate-alt-text', async (req, res) => {
           await new Promise(resolve => setTimeout(resolve, index * DELAY_BETWEEN_IMAGES));
           
           // Default prompt for alt text generation
-          const defaultAltTextPrompt = "Generate alt text for this image in less than 10 words.";
+          const defaultAltTextPrompt = "Generate alt text for this image in less than 20 words.";
           
           const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
             model: "gpt-4o-mini",
