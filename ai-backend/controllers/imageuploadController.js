@@ -8,6 +8,8 @@ const { QueryTypes } = require('sequelize');
 const multer = require('multer');
 const Client = require('ssh2-sftp-client');
 const isProduction = process.env.NODE_ENV === 'production';
+console.log('Current environment:', process.env.NODE_ENV);
+console.log('Is Production?', isProduction);
 const UPLOAD_PATH = '/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads/';
 
 // Function to ensure upload directory exists
@@ -116,7 +118,10 @@ const copyFile = async (source, destination) => {
 
 const handleFileUpload = async (file) => {
     try {
+        console.log('handleFileUpload running in:', process.env.NODE_ENV, 'mode');
+        
         if (isProduction) {
+            console.log('Using production file handling');
             const sourceFilePath = file.path;
             const destinationFilePath = path.join(UPLOAD_PATH, file.filename);
             
@@ -134,6 +139,7 @@ const handleFileUpload = async (file) => {
             
             return imageUrl;
         } else {
+            console.log('Using development SFTP handling');
             // In development, upload via SFTP
             const sftp = new Client();
             await sftp.connect({
