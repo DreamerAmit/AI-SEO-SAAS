@@ -55,10 +55,10 @@ const upload = multer({
 const handleFileUpload = async (file) => {
     try {
         if (isProduction) {
-            // In production, file is already in the correct location
+            // In production, just return the URL (no deletion yet)
             return `https://pic2alt.com/uploads/${file.filename}`;
         } else {
-            // In development, upload via SFTP
+            // In development, upload via SFTP but don't delete yet
             const sftp = new Client();
             await sftp.connect({
                 host: process.env.SFTP_HOST,
@@ -67,25 +67,13 @@ const handleFileUpload = async (file) => {
                 password: process.env.SFTP_PASSWORD
             });
 
-            // Upload to server
             await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
             await sftp.end();
-
-            // Delete local file after successful upload
-            await fs.unlink(file.path);
-            console.log('Deleted local file:', file.path);
 
             return `https://pic2alt.com/uploads/${file.filename}`;
         }
     } catch (error) {
         console.error('File upload error:', error);
-        // Try to clean up local file even if upload failed
-        try {
-            await fs.unlink(file.path);
-            console.log('Cleaned up local file after error:', file.path);
-        } catch (unlinkError) {
-            console.error('Failed to delete local file:', unlinkError);
-        }
         throw error;
     }
 };
@@ -141,7 +129,7 @@ const uploadAndGenerateAltText = async (req, res) => {
             });
         }
 
-        const chatGptPrompt = req.body.chatGptPrompt || "Generate a 10-word alt text for this image.";
+        const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
         const results = [];
         let processedCount = 0;
 
@@ -167,7 +155,7 @@ const uploadAndGenerateAltText = async (req, res) => {
 
                 // Now use the public URL for OpenAI API
                 const imageUrl = await handleFileUpload(file);
-                console.log('Image URL:', imageUrl);
+                console.log('File uploaded, URL:', imageUrl);
 
                 const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
                     model: "gpt-4o-mini",
@@ -212,28 +200,18 @@ const uploadAndGenerateAltText = async (req, res) => {
                 console.log('Database insert successful:', result[0]);
                 processedCount++;
 
-                // After successful processing and database save
+                // Only delete files after successful processing and database storage
                 if (isProduction) {
-                    // In production, delete from server path
-                    try {
-                        await fs.unlink(path.join(UPLOAD_PATH, file.filename));
-                        console.log('Deleted server file:', file.filename);
-                    } catch (unlinkError) {
-                        console.error('Failed to delete server file:', unlinkError);
-                    }
+                    await fs.unlink(path.join(UPLOAD_PATH, file.filename));
+                    console.log('Deleted server file after processing:', file.filename);
+                } else {
+                    await fs.unlink(file.path);
+                    console.log('Deleted local file after processing:', file.path);
                 }
 
                 return result[0];
             } catch (error) {
                 console.error('Error processing file:', error);
-                // Cleanup on error
-                try {
-                    if (isProduction) {
-                        await fs.unlink(path.join(UPLOAD_PATH, file.filename));
-                    }
-                } catch (unlinkError) {
-                    console.error('Failed to delete file during error cleanup:', unlinkError);
-                }
                 return null;
             }
         };
