@@ -54,18 +54,62 @@ const upload = multer({
 
 const copyFile = async (source, destination) => {
     try {
-        // Use streams for reliable file copying
-        const readStream = fsSync.createReadStream(source);
-        const writeStream = fsSync.createWriteStream(destination);
+        // Get source file size
+        const sourceStats = fsSync.statSync(source);
+        const fileSizeMB = (sourceStats.size / (1024 * 1024)).toFixed(2);
+        console.log(`Starting copy of file: ${source}`);
+        console.log(`File size: ${fileSizeMB}MB`);
+
+        // Create write stream with higher buffer size for large files
+        const readStream = fsSync.createReadStream(source, {
+            highWaterMark: 1024 * 1024 // 1MB chunks
+        });
+        
+        const writeStream = fsSync.createWriteStream(destination, {
+            flags: 'w',
+            mode: 0o666
+        });
+
+        let bytesWritten = 0;
         
         return new Promise((resolve, reject) => {
-            readStream.on('error', reject);
-            writeStream.on('error', reject);
-            writeStream.on('finish', resolve);
-            readStream.pipe(writeStream);
+            readStream.on('data', (chunk) => {
+                bytesWritten += chunk.length;
+                console.log(`Progress: ${((bytesWritten / sourceStats.size) * 100).toFixed(2)}%`);
+            });
+
+            readStream.on('error', (error) => {
+                console.error('Read error:', error);
+                reject(error);
+            });
+
+            writeStream.on('error', (error) => {
+                console.error('Write error:', error);
+                reject(error);
+            });
+
+            writeStream.on('finish', () => {
+                // Verify the copy
+                const destStats = fsSync.statSync(destination);
+                console.log(`Copy finished. Original size: ${sourceStats.size}, Copied size: ${destStats.size}`);
+                
+                if (sourceStats.size === destStats.size) {
+                    console.log('File copy successful - sizes match');
+                    resolve();
+                } else {
+                    console.error('File size mismatch!');
+                    reject(new Error(`File size mismatch: source=${sourceStats.size}, dest=${destStats.size}`));
+                }
+            });
+
+            // Pipe with error handling
+            readStream.pipe(writeStream).on('error', (error) => {
+                console.error('Pipe error:', error);
+                reject(error);
+            });
         });
     } catch (error) {
-        console.error('File copy error:', error);
+        console.error('Copy operation failed:', error);
         throw error;
     }
 };
@@ -73,13 +117,22 @@ const copyFile = async (source, destination) => {
 const handleFileUpload = async (file) => {
     try {
         if (isProduction) {
-            // In production, copy file directly to server path
             const sourceFilePath = file.path;
             const destinationFilePath = path.join(UPLOAD_PATH, file.filename);
-            await copyFile(sourceFilePath, destinationFilePath);
-            console.log('File copied to server path:', destinationFilePath);
             
-            return `https://pic2alt.com/uploads/${file.filename}`;
+            console.log('Starting file upload process');
+            console.log('Source:', sourceFilePath);
+            console.log('Destination:', destinationFilePath);
+            
+            await copyFile(sourceFilePath, destinationFilePath);
+            
+            // Verify file exists and is readable
+            await fs.access(destinationFilePath, fs.constants.R_OK);
+            
+            const imageUrl = `https://pic2alt.com/uploads/${file.filename}`;
+            console.log('File upload complete, URL:', imageUrl);
+            
+            return imageUrl;
         } else {
             // In development, upload via SFTP
             const sftp = new Client();
