@@ -16,7 +16,7 @@ const sharp = require('sharp');
 // Increase memory limit for Sharp
 sharp.cache(false);
 sharp.concurrency(1);
-sharp.limitInputPixels(false); // Remove dimension restrictions
+//sharp.limitInputPixels(false); // Remove dimension restrictions
 
 // Function to ensure upload directory exists
 const ensureUploadDir = () => {
