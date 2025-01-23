@@ -7,7 +7,7 @@ const path = require('path');
 const { QueryTypes } = require('sequelize');
 const multer = require('multer');
 const Client = require('ssh2-sftp-client');
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'Production';
 console.log('Current environment:', process.env.NODE_ENV);
 console.log('Is Production?', isProduction);
 const UPLOAD_PATH = '/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads/';
