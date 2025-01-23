@@ -11,6 +11,12 @@ const isProduction = process.env.NODE_ENV === 'production';
 console.log('Current environment:', process.env.NODE_ENV);
 console.log('Is Production?', isProduction);
 const UPLOAD_PATH = '/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads/';
+const sharp = require('sharp');
+
+// Increase memory limit for Sharp
+sharp.cache(false);
+sharp.concurrency(1);
+sharp.limitInputPixels(false); // Remove dimension restrictions
 
 // Function to ensure upload directory exists
 const ensureUploadDir = () => {
@@ -157,6 +163,30 @@ const handleFileUpload = async (file) => {
         }
     } catch (error) {
         console.error('File upload error:', error);
+        throw error;
+    }
+};
+
+const processImage = async (file) => {
+    try {
+        const metadata = await sharp(file.path).metadata();
+        console.log('Original dimensions:', metadata.width, 'x', metadata.height);
+
+        if (metadata.width > 4000 || metadata.height > 4000) {
+            // Resize large images before processing
+            await sharp(file.path)
+                .resize(4000, 4000, {
+                    fit: 'inside',
+                    withoutEnlargement: true
+                })
+                .toFile(path.join(UPLOAD_PATH, `resized-${file.filename}`));
+            
+            // Use the resized version
+            return path.join(UPLOAD_PATH, `resized-${file.filename}`);
+        }
+        return file.path;
+    } catch (error) {
+        console.error('Image processing error:', error);
         throw error;
     }
 };
