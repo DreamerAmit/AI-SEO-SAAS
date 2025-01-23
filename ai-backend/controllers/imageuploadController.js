@@ -136,7 +136,7 @@ const handleFileUpload = async (file) => {
             console.log('Source:', sourceFilePath);
             console.log('Destination:', destinationFilePath);
             
-            await copyFile(sourceFilePath, destinationFilePath);
+         //   await copyFile(sourceFilePath, destinationFilePath);
             
             // Verify file exists and is readable
             await fs.access(destinationFilePath, fs.constants.R_OK);
