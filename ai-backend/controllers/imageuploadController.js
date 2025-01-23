@@ -35,12 +35,13 @@ const ensureUploadDir = () => {
 // Multer configuration
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadPath = isProduction 
-            ? UPLOAD_PATH  // Production: Direct server path
-            : './uploads/'; // Development: Local path
-            
+        // Direct server path for pic2alt.com
+        const uploadPath = '/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads/';
+        
+        // Create directory if it doesn't exist
         if (!fsSync.existsSync(uploadPath)) {
             fsSync.mkdirSync(uploadPath, { recursive: true });
+            console.log('Created uploads directory at:', uploadPath);
         }
         
         cb(null, uploadPath);
@@ -51,7 +52,7 @@ const storage = multer.diskStorage({
     }
 });
 
-// Create multer instance with 'images' field name to match frontend
+// Update multer instance with new storage config
 const upload = multer({ 
     storage: storage,
     limits: {
