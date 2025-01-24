@@ -468,9 +468,11 @@ class WebhookService {
     } = webhookData.data;
 
     const customer = webhookData.data.customer;
+    const quantity = webhookData.data.product_cart?.[0]?.quantity || 0;
+    console.log('quantity:', quantity);
     const payment_type = subscription_id ? 'subscription' : 'credit_pack';
     const credits_offered = payment_type === 'credit_pack' ? 
-      Math.floor(((total_amount - tax) / 300) * 50) : 0;
+      Math.floor((quantity) * 50) : 0;
 
     try {
       // Update customer_id in customers table based on email
