@@ -25,7 +25,7 @@ app.use(cors({
     console.log('Request origin:', origin);
     callback(null, true); // Allow all origins temporarily
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Explicitly allow all methods
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Explicitly allow all methods
   credentials: true
 }));
 
