@@ -142,7 +142,7 @@ export const cancelSubscriptionAPI = async () => {
     if (!token) {
       throw new Error('No token found');
     }
-    const response = await axios.post(
+    const response = await axios.patch(
       `${process.env.REACT_APP_API_URL}/users/cancel-subscription`,
       {},
       {

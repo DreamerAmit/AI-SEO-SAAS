@@ -174,6 +174,6 @@ usersRouter.post('/scrape-and-generate', scrapeController.scrapeAndGenerate);
 // Add these new routes after existing routes
 usersRouter.get("/subscription-details", isAuthenticated, getUserProfileWithSubscription);
 usersRouter.get("/billing-history", isAuthenticated, getUserPaymentHistory);
-usersRouter.post("/cancel-subscription", isAuthenticated, cancelSubscriptionRenewal);
+usersRouter.patch("/cancel-subscription", isAuthenticated, cancelSubscriptionRenewal);
 
 module.exports = usersRouter;
