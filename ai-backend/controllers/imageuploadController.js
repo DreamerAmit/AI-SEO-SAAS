@@ -200,7 +200,7 @@ const optimizeImage = async (file) => {
 };
 
 const processImages = async (files, uploadedUrls, userIdInt, prompt) => {
-    const batchSize = 3;  // Process 3 images at once
+    const batchSize = 2;  // Process 3 images at once
     const processResults = [];
     
     for (let i = 0; i < files.length; i += batchSize) {
