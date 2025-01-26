@@ -199,7 +199,7 @@ const optimizeImage = async (file) => {
         .toBuffer();
 };
 
-const processImages = async (files, uploadedUrls) => {
+const processImages = async (files, uploadedUrls,chatGptPrompt) => {
     const batchSize = 3;  // Process 3 images at once
     const processResults = [];
     const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
