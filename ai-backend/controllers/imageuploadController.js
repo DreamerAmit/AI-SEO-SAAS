@@ -293,18 +293,21 @@ const uploadAndGenerateAltText = async (req, res) => {
         }
 
         const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
-        const results = [];
-        let processedCount = 0;
 
-        // Process images in parallel with temporary URLs
-        const processImage = async (file) => {
-            let filePath;
+        // Step 1: Upload all files in parallel
+        console.log('Starting parallel file uploads');
+        const uploadStartTime = Date.now();
+        const uploadPromises = files.map(file => handleFileUpload(file));
+        const uploadedUrls = await Promise.all(uploadPromises);
+        console.log(`All files uploaded in: ${Date.now() - uploadStartTime}ms`);
+
+        // Step 2: Generate alt text for all images
+        const processResults = [];
+        for (let i = 0; i < files.length; i++) {
             try {
-                console.log('Starting to process file:', file.filename);
-                
-                // Instead, use handleFileUpload which has the correct SFTP logic
-                const imageUrl = await handleFileUpload(file);
-                console.log('File uploaded, URL:', imageUrl);
+                const file = files[i];
+                const imageUrl = uploadedUrls[i];
+                console.log('Processing:', file.filename);
 
                 const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
                     model: "gpt-4o-mini",
@@ -329,84 +332,75 @@ const uploadAndGenerateAltText = async (req, res) => {
                     timeout: 15000
                 });
 
-                console.log('OpenAI API response received');
-                const altText = openAIResponse.data.choices[0].message.content.trim();
-                console.log('Generated alt text:', altText);
+                processResults.push({
+                    src: file.filename,
+                    altText: openAIResponse.data.choices[0].message.content.trim(),
+                    userId: userIdInt,
+                    path: file.path
+                });
 
-                // Save to database
-                const result = await db.query(
-                    'INSERT INTO "images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
-                    {
-                        replacements: { 
-                            src: file.filename, 
-                            altText: altText, 
-                            userId: userIdInt 
-                        },
-                        type: QueryTypes.INSERT
-                    }
-                );
-
-                console.log('Database insert successful:', result[0]);
-                processedCount++;
-
-                // Only delete files after successful processing and database storage
-                if (isProduction) {
-                    await fs.unlink((UPLOAD_PATH + file.filename));
-                    console.log('Deleted server file after processing:', file.filename);
-                } else {
-                    await fs.unlink(file.path);
-                    console.log('Deleted local file after processing:', file.path);
-                }
-
-                return result[0];
             } catch (error) {
                 console.error('Error processing file:', error);
-                return null;
             }
-        };
+        }
 
-        // Process all files in parallel
-        console.log('Starting parallel processing of files');
-        const processedResults = await Promise.all(files.map(processImage));
-        console.log('Processed results:', processedResults);
-        results.push(...processedResults.filter(Boolean));
+        // Batch insert all results
+        if (processResults.length > 0) {
+            const query = `
+                INSERT INTO "images" ("src", "alt_text", "user_id")
+                VALUES ${processResults.map((_, index) => 
+                    `(:src${index}, :altText${index}, :userId${index})`
+                ).join(', ')}
+                RETURNING id, "src", "alt_text";
+            `;
 
-        // Update user credits in a single transaction
-        if (processedCount > 0) {
-            console.log('Updating user credits');
-            const deductResult = await db.query(
-                'UPDATE "Users" SET image_credits = image_credits - :amount WHERE id = :userId AND image_credits >= :amount RETURNING image_credits',
-                {
-                    replacements: {
-                        amount: processedCount,
-                        userId: userIdInt
-                    },
-                    type: QueryTypes.UPDATE
-                }
-            );
+            // Create replacements object
+            const replacements = {};
+            processResults.forEach((result, index) => {
+                replacements[`src${index}`] = result.src;
+                replacements[`altText${index}`] = result.altText;
+                replacements[`userId${index}`] = result.userId;
+            });
 
-            if (!deductResult?.[0]?.length) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Failed to deduct credits"
-                });
-            }
-
+            const insertResult = await db.query(query, {
+                replacements: replacements,
+                type: QueryTypes.INSERT
+            });
+            
+            // Send response immediately after database insert
             res.json({
                 success: true,
-                results,
-                message: `Successfully processed ${processedCount} images`,
-                remainingCredits: deductResult[0][0].image_credits,
-                errors: processedResults.filter(r => !r).length > 0 ? 
-                        processedResults.filter(r => !r).map(() => ({ error: 'Processing failed' })) : 
-                        undefined
+                results: insertResult[0],
+                message: `Successfully processed ${files.length} images`
             });
-        } else {
-            console.error('No images were processed successfully');
-            res.status(400).json({
-                success: false,
-                message: "No images were successfully processed"
-            });
+
+            // After sending response, update credits and cleanup files
+            try {
+                // Update credits (keeping existing logic)
+                const deductResult = await db.query(
+                    'UPDATE "Users" SET image_credits = image_credits - :amount WHERE id = :userId AND image_credits >= :amount RETURNING image_credits',
+                    {
+                        replacements: {
+                            amount: files.length,
+                            userId: userIdInt
+                        },
+                        type: QueryTypes.UPDATE
+                    }
+                );
+                console.log('Credits updated, remaining:', deductResult[0][0].image_credits);
+
+                // Delete files last
+                for (const result of processResults) {
+                    try {
+                        await fs.unlink(result.path);
+                        console.log('Deleted file after processing:', result.src);
+                    } catch (unlinkError) {
+                        console.error('Failed to delete file:', unlinkError);
+                    }
+                }
+            } catch (cleanupError) {
+                console.error('Error in post-response operations:', cleanupError);
+            }
         }
 
     } catch (error) {
