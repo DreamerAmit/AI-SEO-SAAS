@@ -392,7 +392,7 @@ const uploadAndGenerateAltText = async (req, res) => {
                 // Delete files last
                 for (const result of processResults) {
                     try {
-                        await fs.unlink(result.path);
+                        await fs.unlink(UPLOAD_PATH + result.src);
                         console.log('Deleted file after processing:', result.src);
                     } catch (unlinkError) {
                         console.error('Failed to delete file:', unlinkError);
