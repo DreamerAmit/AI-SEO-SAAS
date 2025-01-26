@@ -199,10 +199,9 @@ const optimizeImage = async (file) => {
         .toBuffer();
 };
 
-const processImages = async (files, uploadedUrls,chatGptPrompt) => {
+const processImages = async (files, uploadedUrls, userIdInt, prompt) => {
     const batchSize = 3;  // Process 3 images at once
     const processResults = [];
-    const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
     
     for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
@@ -216,25 +215,25 @@ const processImages = async (files, uploadedUrls,chatGptPrompt) => {
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: chatGptPrompt },
+                            { type: "text", text: prompt },
                             { 
                                 type: "image_url", 
                                 image_url: { 
                                     url: imageUrl,
-                                    detail: "low"  // Reduce image detail for faster processing
+                                    detail: "low"
                                 } 
                             }
                         ],
                     },
                 ],
-                max_tokens: 50,  // Reduce token limit
-                temperature: 0.3  // Lower temperature for faster responses
+                max_tokens: 50,
+                temperature: 0.3
             }, {
                 headers: {
                     'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 10000  // 10 second timeout
+                timeout: 10000
             });
             
             return {
@@ -254,6 +253,7 @@ const processImages = async (files, uploadedUrls,chatGptPrompt) => {
 
 const uploadAndGenerateAltText = async (req, res) => {
     try {
+        const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
         console.log('Starting upload process with files:', req.files?.length);
         const userId = req.body.userId;
         
@@ -316,7 +316,7 @@ const uploadAndGenerateAltText = async (req, res) => {
         await Promise.all(files.map(optimizeImage));
 
         // Step 3: Generate alt text for all images
-        const processResults = await processImages(files, uploadedUrls,chatGptPrompt);
+        const processResults = await processImages(files, uploadedUrls, userIdInt, chatGptPrompt);
 
         // Batch insert all results
         if (processResults.length > 0) {
