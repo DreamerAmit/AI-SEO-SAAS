@@ -323,7 +323,8 @@ const uploadAndGenerateAltText = async (req, res) => {
                             ],
                         },
                     ],
-                    max_tokens: 100,
+                    max_tokens: 50,
+                    temperature: 0.3,
                 }, {
                     headers: {
                         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
