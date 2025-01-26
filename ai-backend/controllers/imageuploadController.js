@@ -130,7 +130,7 @@ const handleFileUpload = async (file) => {
         if (isProduction) {
             console.log('Using production file handling');
             const sourceFilePath = file.path;
-            const destinationFilePath = path.join(UPLOAD_PATH, file.filename);
+            const destinationFilePath = (UPLOAD_PATH + file.filename);
             
             console.log('Starting file upload process');
             console.log('Source:', sourceFilePath);
@@ -147,20 +147,41 @@ const handleFileUpload = async (file) => {
             return imageUrl;
         } else {
             console.log('Using development SFTP handling');
-            // In development, upload via SFTP
             const sftp = new Client();
-            await sftp.connect({
-                host: process.env.SFTP_HOST,
-                port: 22,
-                username: process.env.SFTP_USER,
-                password: process.env.SFTP_PASSWORD
-            });
+            try {
+                // Log connection details for debugging
+                console.log('SFTP Connection Details:', {
+                    host: process.env.SFTP_HOST,
+                    username: process.env.SFTP_USER,
+                    hasPassword: !!process.env.SFTP_PASSWORD
+                });
 
-            await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
-            await sftp.end();
-            console.log('File uploaded via SFTP:', file.filename);
+                await sftp.connect({
+                    host: process.env.SFTP_HOST,
+                    port: 22,
+                    username: process.env.SFTP_USER,
+                    password: process.env.SFTP_PASSWORD
+                });
 
-            return `https://pic2alt.com/uploads/${file.filename}`;
+                console.log('SFTP Connected successfully');
+                console.log('Uploading file from:', file.path);
+                console.log('To:', `${UPLOAD_PATH}${file.filename}`);
+
+                await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
+                console.log('File uploaded via SFTP:', file.filename);
+
+                await sftp.end();
+                console.log('SFTP connection closed');
+
+                return `https://pic2alt.com/uploads/${file.filename}`;
+            } catch (sftpError) {
+                console.error('SFTP Error:', {
+                    message: sftpError.message,
+                    code: sftpError.code,
+                    stack: sftpError.stack
+                });
+                throw sftpError;
+            }
         }
     } catch (error) {
         console.error('File upload error:', error);
@@ -170,22 +191,50 @@ const handleFileUpload = async (file) => {
 
 const processImage = async (file) => {
     try {
-        const metadata = await sharp(file.path).metadata();
-        console.log('Original dimensions:', metadata.width, 'x', metadata.height);
+        console.log('Processing file:', file.filename);
+        
+        if (isProduction) {
+            // Production handling
+            const metadata = await sharp(file.path).metadata();
+            console.log('Original dimensions:', metadata.width, 'x', metadata.height);
 
-        if (metadata.width > 4000 || metadata.height > 4000) {
-            // Resize large images before processing
-            await sharp(file.path)
-                .resize(4000, 4000, {
-                    fit: 'inside',
-                    withoutEnlargement: true
-                })
-                .toFile(path.join(UPLOAD_PATH, `resized-${file.filename}`));
+            if (metadata.width > 4000 || metadata.height > 4000) {
+                // Resize large images before processing
+                await sharp(file.path)
+                    .resize(4000, 4000, {
+                        fit: 'inside',
+                        withoutEnlargement: true
+                    })
+                    .toFile((UPLOAD_PATH + `resized-${file.filename}`));
+                
+                // Use the resized version
+                return (UPLOAD_PATH + `resized-${file.filename}`);
+            }
+            return file.path;
+        } else {
+            // Development handling - use SFTP
+            console.log('Using SFTP for development upload');
+            const sftp = new Client();
             
-            // Use the resized version
-            return path.join(UPLOAD_PATH, `resized-${file.filename}`);
+            try {
+                await sftp.connect({
+                    host: process.env.SFTP_HOST,
+                    port: 22,
+                    username: process.env.SFTP_USER,
+                    password: process.env.SFTP_PASSWORD
+                });
+                
+                console.log('SFTP connected, uploading file:', file.path);
+                await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
+                console.log('File uploaded via SFTP');
+                
+                await sftp.end();
+                return file.path;
+            } catch (sftpError) {
+                console.error('SFTP Error:', sftpError);
+                throw sftpError;
+            }
         }
-        return file.path;
     } catch (error) {
         console.error('Image processing error:', error);
         throw error;
@@ -253,21 +302,7 @@ const uploadAndGenerateAltText = async (req, res) => {
             try {
                 console.log('Starting to process file:', file.filename);
                 
-                // First, copy the file from temporary upload location to public directory
-                const sourceFilePath = path.join(process.cwd(), 'uploads', file.filename);
-                const publicFilePath = path.join('/var/www/pic2alt/AI-SEO-SAAS/ai-backend/uploads', file.filename);
-                
-                // Ensure the directory exists
-                const publicDir = path.dirname(publicFilePath);
-                if (!fsSync.existsSync(publicDir)) {
-                    fsSync.mkdirSync(publicDir, { recursive: true });
-                }
-
-                // Copy file to public directory
-                await fs.copyFile(sourceFilePath, publicFilePath);
-                console.log('File copied to public directory:', publicFilePath);
-
-                // Now use the public URL for OpenAI API
+                // Instead, use handleFileUpload which has the correct SFTP logic
                 const imageUrl = await handleFileUpload(file);
                 console.log('File uploaded, URL:', imageUrl);
 
@@ -316,7 +351,7 @@ const uploadAndGenerateAltText = async (req, res) => {
 
                 // Only delete files after successful processing and database storage
                 if (isProduction) {
-                    await fs.unlink(path.join(UPLOAD_PATH, file.filename));
+                    await fs.unlink((UPLOAD_PATH + file.filename));
                     console.log('Deleted server file after processing:', file.filename);
                 } else {
                     await fs.unlink(file.path);
@@ -381,7 +416,7 @@ const uploadAndGenerateAltText = async (req, res) => {
             for (const file of req.files) {
                 try {
                     const filePath = isProduction ? 
-                        path.join(UPLOAD_PATH, file.filename) : 
+                        (UPLOAD_PATH + file.filename) : 
                         file.path;
                     await fs.unlink(filePath);
                     console.log('Cleaned up file after error:', file.filename);
