@@ -191,7 +191,7 @@ const handleFileUpload = async (file) => {
 
 const optimizeImage = async (file) => {
     await sharp(file.path)
-        .resize(800, 800, {
+        .resize(512, 512, {
             fit: 'inside',
             withoutEnlargement: true
         })
