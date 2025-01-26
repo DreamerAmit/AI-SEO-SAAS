@@ -316,7 +316,7 @@ const uploadAndGenerateAltText = async (req, res) => {
         await Promise.all(files.map(optimizeImage));
 
         // Step 3: Generate alt text for all images
-        const processResults = await processImages(files, uploadedUrls);
+        const processResults = await processImages(files, uploadedUrls,chatGptPrompt);
 
         // Batch insert all results
         if (processResults.length > 0) {
