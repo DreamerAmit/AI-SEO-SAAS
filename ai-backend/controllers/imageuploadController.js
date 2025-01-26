@@ -189,89 +189,66 @@ const handleFileUpload = async (file) => {
     }
 };
 
-const processImage = async (file) => {
-    try {
-        console.log('Starting to process file:', file.filename);
-        
-        // Get public URL
-        const imageUrl = `https://pic2alt.com/uploads/${file.filename}`;
-        console.log('Using image URL:', imageUrl);
+const optimizeImage = async (file) => {
+    await sharp(file.path)
+        .resize(800, 800, {
+            fit: 'inside',
+            withoutEnlargement: true
+        })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+};
 
-        // Verify image accessibility
-        try {
-            const testResponse = await axios.head(imageUrl);
-            console.log('Image URL is accessible:', imageUrl);
-        } catch (error) {
-            console.error('Image URL is not accessible:', error.message);
-            throw new Error(`Image URL not accessible: ${imageUrl}`);
-        }
-
-        // OpenAI API call with detailed logging
-        try {
-            console.log('Calling OpenAI API with URL:', imageUrl);
+const processImages = async (files, uploadedUrls) => {
+    const batchSize = 3;  // Process 3 images at once
+    const processResults = [];
+    
+    for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (file, index) => {
+            const imageUrl = uploadedUrls[i + index];
+            console.log('Processing:', file.filename);
+            
             const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-                model: "gpt-4o-mini",
+                model: "gpt-4-vision-preview",
                 messages: [
                     {
                         role: "user",
                         content: [
-                            { type: "text", text: chatGptPrompt || "Generate a descriptive alt text for this image." },
+                            { type: "text", text: chatGptPrompt },
                             { 
                                 type: "image_url", 
                                 image_url: { 
                                     url: imageUrl,
-                                    detail: "low"  // Reduce bandwidth usage
-                                }
+                                    detail: "low"  // Reduce image detail for faster processing
+                                } 
                             }
                         ],
                     },
                 ],
-                max_tokens: 100
+                max_tokens: 50,  // Reduce token limit
+                temperature: 0.3  // Lower temperature for faster responses
             }, {
                 headers: {
                     'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 30000 // 30 second timeout
+                timeout: 10000  // 10 second timeout
             });
-
-            console.log('OpenAI API response received');
-            const altText = openAIResponse.data.choices[0].message.content.trim();
-            console.log('Generated alt text:', altText);
-
-            // Save to database
-            const result = await db.query(
-                'INSERT INTO "Images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
-                {
-                    replacements: { 
-                        src: file.filename, 
-                        altText: altText, 
-                        userId: userIdInt 
-                    },
-                    type: QueryTypes.INSERT
-                }
-            );
-
-            return result[0];
-
-        } catch (error) {
-            console.error('OpenAI API Error:', {
-                message: error.message,
-                response: error.response?.data,
-                status: error.response?.status,
-                headers: error.response?.headers
-            });
-            throw error;
-        }
-
-    } catch (error) {
-        console.error('Error processing file:', {
-            filename: file.filename,
-            error: error.message,
-            stack: error.stack
+            
+            return {
+                src: file.filename,
+                altText: openAIResponse.data.choices[0].message.content.trim(),
+                userId: userIdInt,
+                path: file.path
+            };
         });
-        return null;
+        
+        const batchResults = await Promise.all(batchPromises);
+        processResults.push(...batchResults);
     }
+    
+    return processResults;
 };
 
 const uploadAndGenerateAltText = async (req, res) => {
@@ -334,49 +311,11 @@ const uploadAndGenerateAltText = async (req, res) => {
         const uploadedUrls = await Promise.all(uploadPromises);
         console.log(`All files uploaded in: ${Date.now() - uploadStartTime}ms`);
 
-        // Step 2: Generate alt text for all images
-        const processResults = [];
-        for (let i = 0; i < files.length; i++) {
-            try {
-                const file = files[i];
-                const imageUrl = uploadedUrls[i];
-                console.log('Processing:', file.filename);
+        // Step 2: Optimize images
+        await Promise.all(files.map(optimizeImage));
 
-                const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-                    model: "gpt-4o-mini",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                { type: "text", text: chatGptPrompt },
-                                { 
-                                    type: "image_url", 
-                                    image_url: { url: imageUrl }
-                                }
-                            ],
-                        },
-                    ],
-                    max_tokens: 50,
-                    temperature: 0.3,
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 15000
-                });
-
-                processResults.push({
-                    src: file.filename,
-                    altText: openAIResponse.data.choices[0].message.content.trim(),
-                    userId: userIdInt,
-                    path: file.path
-                });
-
-            } catch (error) {
-                console.error('Error processing file:', error);
-            }
-        }
+        // Step 3: Generate alt text for all images
+        const processResults = await processImages(files, uploadedUrls);
 
         // Batch insert all results
         if (processResults.length > 0) {
