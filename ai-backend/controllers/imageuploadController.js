@@ -200,52 +200,83 @@ const optimizeImage = async (file) => {
 };
 
 const processImages = async (files, uploadedUrls, userIdInt, prompt) => {
-    const batchSize = 2;  // Process 3 images at once
+    const batchSize = 5;  // Process one at a time for now
     const processResults = [];
     
     for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
+        console.log(`Processing image ${i + 1} of ${files.length}`);
+        
         const batchPromises = batch.map(async (file, index) => {
             const imageUrl = uploadedUrls[i + index];
             console.log('Processing:', file.filename);
             
-            const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-                model: "gpt-4-vision-preview",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: prompt },
-                            { 
-                                type: "image_url", 
-                                image_url: { 
-                                    url: imageUrl,
-                                    detail: "low"
-                                } 
-                            }
-                        ],
+            try {
+                // Using the correct endpoint for GPT-4 Vision
+                const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+                    model: "gpt-4o-mini",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { 
+                                    type: "text", 
+                                    text: prompt 
+                                },
+                                { 
+                                    type: "image_url", 
+                                    image_url: { 
+                                        url: imageUrl,
+                                        detail: "low"
+                                    } 
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens: 50,
+                    temperature: 0.3
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'OpenAI-Beta': 'gpt-4-vision-preview'  // Added this header
                     },
-                ],
-                max_tokens: 50,
-                temperature: 0.3
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout: 10000
-            });
-            
-            return {
-                src: file.filename,
-                altText: openAIResponse.data.choices[0].message.content.trim(),
-                userId: userIdInt,
-                path: file.path
-            };
+                    timeout: 30000  // Increased timeout to 30 seconds
+                });
+
+                if (!openAIResponse.data?.choices?.[0]?.message?.content) {
+                    throw new Error('Invalid response from OpenAI');
+                }
+                
+                return {
+                    src: file.filename,
+                    altText: openAIResponse.data.choices[0].message.content.trim(),
+                    userId: userIdInt,
+                    path: file.path
+                };
+            } catch (error) {
+                console.error('OpenAI API Error:', {
+                    status: error.response?.status,
+                    message: error.response?.data?.error?.message || error.message,
+                    url: imageUrl,
+                    data: error.response?.data
+                });
+                throw error;
+            }
         });
         
-        const batchResults = await Promise.all(batchPromises);
-        processResults.push(...batchResults);
+        try {
+            const batchResults = await Promise.all(batchPromises);
+            processResults.push(...batchResults);
+            
+            // Add delay between images
+            if (i + batchSize < files.length) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        } catch (error) {
+            console.error('Batch processing error:', error);
+            throw error;
+        }
     }
     
     return processResults;
