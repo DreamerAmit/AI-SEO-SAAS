@@ -202,6 +202,7 @@ const optimizeImage = async (file) => {
 const processImages = async (files, uploadedUrls) => {
     const batchSize = 3;  // Process 3 images at once
     const processResults = [];
+    const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
     
     for (let i = 0; i < files.length; i += batchSize) {
         const batch = files.slice(i, i + batchSize);
@@ -302,7 +303,7 @@ const uploadAndGenerateAltText = async (req, res) => {
             });
         }
 
-        const chatGptPrompt = req.body.chatGptPrompt || "Generate a 20-word alt text for this image.";
+        
 
         // Step 1: Upload all files in parallel
         console.log('Starting parallel file uploads');
