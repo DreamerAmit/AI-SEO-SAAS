@@ -191,11 +191,11 @@ const handleFileUpload = async (file) => {
 
 const optimizeImage = async (file) => {
     await sharp(file.path)
-        .resize(512, 512, {
+        .resize(384, 384, {
             fit: 'inside',
             withoutEnlargement: true
         })
-        .jpeg({ quality: 80 })
+        .jpeg({ quality: 60 , mozjpeg: true})
         .toBuffer();
 };
 
