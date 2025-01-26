@@ -191,53 +191,86 @@ const handleFileUpload = async (file) => {
 
 const processImage = async (file) => {
     try {
-        console.log('Processing file:', file.filename);
+        console.log('Starting to process file:', file.filename);
         
-        if (isProduction) {
-            // Production handling
-            const metadata = await sharp(file.path).metadata();
-            console.log('Original dimensions:', metadata.width, 'x', metadata.height);
+        // Get public URL
+        const imageUrl = `https://pic2alt.com/uploads/${file.filename}`;
+        console.log('Using image URL:', imageUrl);
 
-            if (metadata.width > 4000 || metadata.height > 4000) {
-                // Resize large images before processing
-                await sharp(file.path)
-                    .resize(4000, 4000, {
-                        fit: 'inside',
-                        withoutEnlargement: true
-                    })
-                    .toFile((UPLOAD_PATH + `resized-${file.filename}`));
-                
-                // Use the resized version
-                return (UPLOAD_PATH + `resized-${file.filename}`);
-            }
-            return file.path;
-        } else {
-            // Development handling - use SFTP
-            console.log('Using SFTP for development upload');
-            const sftp = new Client();
-            
-            try {
-                await sftp.connect({
-                    host: process.env.SFTP_HOST,
-                    port: 22,
-                    username: process.env.SFTP_USER,
-                    password: process.env.SFTP_PASSWORD
-                });
-                
-                console.log('SFTP connected, uploading file:', file.path);
-                await sftp.put(file.path, `${UPLOAD_PATH}${file.filename}`);
-                console.log('File uploaded via SFTP');
-                
-                await sftp.end();
-                return file.path;
-            } catch (sftpError) {
-                console.error('SFTP Error:', sftpError);
-                throw sftpError;
-            }
+        // Verify image accessibility
+        try {
+            const testResponse = await axios.head(imageUrl);
+            console.log('Image URL is accessible:', imageUrl);
+        } catch (error) {
+            console.error('Image URL is not accessible:', error.message);
+            throw new Error(`Image URL not accessible: ${imageUrl}`);
         }
+
+        // OpenAI API call with detailed logging
+        try {
+            console.log('Calling OpenAI API with URL:', imageUrl);
+            const openAIResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
+                model: "gpt-4-vision-preview",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: chatGptPrompt || "Generate a descriptive alt text for this image." },
+                            { 
+                                type: "image_url", 
+                                image_url: { 
+                                    url: imageUrl,
+                                    detail: "low"  // Reduce bandwidth usage
+                                }
+                            }
+                        ],
+                    },
+                ],
+                max_tokens: 100
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 30000 // 30 second timeout
+            });
+
+            console.log('OpenAI API response received');
+            const altText = openAIResponse.data.choices[0].message.content.trim();
+            console.log('Generated alt text:', altText);
+
+            // Save to database
+            const result = await db.query(
+                'INSERT INTO "Images" ("src", "alt_text", "user_id") VALUES (:src, :altText, :userId) RETURNING id, "src", "alt_text"',
+                {
+                    replacements: { 
+                        src: file.filename, 
+                        altText: altText, 
+                        userId: userIdInt 
+                    },
+                    type: QueryTypes.INSERT
+                }
+            );
+
+            return result[0];
+
+        } catch (error) {
+            console.error('OpenAI API Error:', {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+                headers: error.response?.headers
+            });
+            throw error;
+        }
+
     } catch (error) {
-        console.error('Image processing error:', error);
-        throw error;
+        console.error('Error processing file:', {
+            filename: file.filename,
+            error: error.message,
+            stack: error.stack
+        });
+        return null;
     }
 };
 
