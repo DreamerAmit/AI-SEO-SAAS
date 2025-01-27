@@ -160,6 +160,24 @@ const Images = () => {
     }
   };
 
+  const handleCopyAltText = (altText) => {
+    navigator.clipboard.writeText(altText)
+      .then(() => {
+        toast.success('Alt text copied!', {
+          position: "top-right",
+          autoClose: 1500,
+          hideProgressBar: true,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      })
+      .catch((err) => {
+        console.error('Failed to copy text: ', err);
+        toast.error('Failed to copy text');
+      });
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -253,8 +271,17 @@ const Images = () => {
                     </div>
                   </td>
                   <td className="px-6 py-3 text-sm text-black">
-                    <div className="break-words">
-                      {image.alt_text}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleCopyAltText(image.alt_text)}
+                        className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                        title="Copy alt text"
+                      >
+                        <FaCopy className="w-4 h-4" />
+                      </button>
+                      <div className="break-words">
+                        {image.alt_text}
+                      </div>
                     </div>
                   </td>
                 </tr>

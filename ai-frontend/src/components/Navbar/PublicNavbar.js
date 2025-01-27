@@ -7,11 +7,15 @@ const navigation = [
   { name: "Home", href: "/" },
   { name: "Support", href: "/support" },
   { name: "Pricing", href: "/plans" },
-  { name: "About", href: "/about" },
+  { name: "About", href: "/about" }
 ];
 
 export default function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const handleMobileNavClick = () => {
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -103,6 +107,7 @@ export default function PublicNavbar() {
                       <Link
                         key={item.name}
                         to={item.href}
+                        onClick={handleMobileNavClick}
                         className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-white hover:bg-gray-800"
                       >
                         {item.name}
@@ -112,6 +117,7 @@ export default function PublicNavbar() {
                   <div className="py-6">
                     <Link
                       to="/"
+                      onClick={handleMobileNavClick}
                       className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-white hover:bg-gray-800"
                     >
                       Log in
