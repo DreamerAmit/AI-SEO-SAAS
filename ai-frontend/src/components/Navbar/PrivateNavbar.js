@@ -51,12 +51,12 @@ export default function PrivateNavbar() {
 
           <div className="w-full px-4 sm:px-6 lg:px-8">
             <div className="relative flex h-16 items-center">
-              <div className="absolute left-4">
+              <div className="absolute left-0 pl-2 sm:pl-4">
                 <Link to="/" className="text-white">
                   <img 
                     src="../../logo.png"
                     alt="Logo" 
-                    className="h-14 w-65"
+                    className="h-12 w-auto"
                   />
                 </Link>
               </div>
