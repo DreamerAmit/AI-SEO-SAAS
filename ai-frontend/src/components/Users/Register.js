@@ -33,12 +33,35 @@ const Registration = () => {
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
+
+  // Add this function to send registration email
+  const sendRegistrationEmail = async (userData) => {
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/email/registration`, {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email
+      });
+
+      if (response.data.success) {
+        console.log('Registration notification email sent successfully');
+      }
+    } catch (error) {
+      console.error('Failed to send registration notification email:', error);
+    }
+  };
+
   //mutation
   const mutation = useMutation({
     mutationFn: registerAPI,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.status === "success") {
-        // setLoading(false);
+        // Send registration email
+        await sendRegistrationEmail({
+          firstName: formik.values.firstName,
+          lastName: formik.values.lastName,
+          email: formik.values.email
+        });
         setShowSuccessModal(true);
       } else {
         console.error("Registration failed", data);

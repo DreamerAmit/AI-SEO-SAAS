@@ -56,6 +56,38 @@ const emailController = {
         message: 'Failed to send message'
       });
     }
+  },
+
+  async sendRegistrationEmail(req, res) {
+    try {
+      const { firstName, lastName, email } = req.body;
+
+      await transporter.sendMail({
+        from: process.env.ZOHO_EMAIL,
+        to: process.env.ZOHO_EMAIL,
+        subject: `New User Registration - ${firstName} ${lastName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>New User Registration</h2>
+            <p><strong>First Name:</strong> ${firstName}</p>
+            <p><strong>Last Name:</strong> ${lastName}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Registration Time:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+        `
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Registration notification sent successfully'
+      });
+    } catch (error) {
+      console.error('Registration email error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send registration notification'
+      });
+    }
   }
 };
 
