@@ -116,7 +116,7 @@ export default function PublicNavbar() {
                   </div>
                   <div className="py-6">
                     <Link
-                      to="/"
+                      to="/login"
                       onClick={handleMobileNavClick}
                       className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-white hover:bg-gray-800"
                     >
