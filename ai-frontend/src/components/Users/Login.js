@@ -6,6 +6,10 @@ import { useMutation } from "@tanstack/react-query";
 import { loginAPI } from "../../apis/user/usersAPI";
 import StatusMessage from "../Alert/StatusMessage";
 import { useAuth } from "../../AuthContext/AuthContext";
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
+import axios from "axios";
+import { toast } from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -69,13 +73,157 @@ const Login = () => {
     },
   });
 
+  // Add Google Sign in handler
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const decoded = jwtDecode(credentialResponse.credential);
+      
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/users/auth/google`,
+        {
+          email: decoded.email,
+          googleId: decoded.sub,
+          firstName: decoded.given_name,
+          lastName: decoded.family_name,
+          provider: 'google',
+          isLogin: true  // Add this flag to indicate it's a login attempt
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.status === "success") {
+        if (!response.data.isExistingUser) {
+          // User not registered
+          toast.error("Account not found. Please register first.", {
+            position: "top-right",
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
+          navigate("/register");  // Redirect to registration page
+          return;
+        }
+
+        // Existing user - proceed with login
+        await loginUser({
+          token: response.data.token,
+          user: response.data.user
+        });
+        
+        toast.success("Login successful!", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Google login failed:", error);
+      toast.error("Login failed. Please try again.", {
+        position: "top-right",
+        autoClose: 5000,
+      });
+    }
+  };
+
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 5;
+    
+    const initializeGoogleSignIn = () => {
+      const buttonContainer = document.getElementById('google-signin-button');
+      
+      if (window.google?.accounts?.id && buttonContainer) {
+        console.log("Initializing Google Sign-in in Login");
+        try {
+          window.google.accounts.id.initialize({
+            client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+            callback: handleGoogleSuccess,
+            ux_mode: 'popup',
+            context: 'signin',
+            auto_select: false,
+            itp_support: true
+          });
+
+          window.google.accounts.id.renderButton(
+            buttonContainer,
+            {
+              theme: 'filled_blue',
+              size: 'large',
+              text: 'signin_with',
+              width: 400,
+              shape: 'rectangular'
+            }
+          );
+          
+          console.log("Google Sign-in initialized successfully in Login");
+        } catch (error) {
+          console.error("Error initializing Google Sign-in:", error);
+        }
+      } else {
+        retryCount++;
+        console.log(`Google library or button container not yet available, retry ${retryCount} of ${maxRetries}`);
+        console.log("Google library exists:", !!window.google?.accounts?.id);
+        console.log("Button container exists:", !!buttonContainer);
+        
+        if (retryCount < maxRetries) {
+          setTimeout(initializeGoogleSignIn, 1000);
+        } else {
+          console.error("Failed to initialize Google Sign-in after maximum retries");
+        }
+      }
+    };
+
+    // Load the Google script manually if it's not present
+    if (!document.querySelector('script#google-client')) {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.id = 'google-client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogleSignIn;
+      document.body.appendChild(script);
+    } else {
+      initializeGoogleSignIn();
+    }
+
+    // Cleanup function
+    return () => {
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.cancel();
+      }
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 pt-0">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 pt-20">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8 m-4">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
-          Sign in to your account
+          Login to Your Account
         </h2>
         
+        {/* Google Sign-in Button */}
+        <div className="mb-4">
+          <div 
+            id="google-signin-button" 
+            className="w-full flex justify-center"
+          ></div>
+        </div>
+
+        <div className="relative mb-4">
+          <hr className="border-t border-gray-300" />
+          <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-5 text-sm text-gray-500">
+            OR
+          </span>
+        </div>
+
         <div className="mt-8 space-y-6">
           {loginMutation.isLoading && (
             <StatusMessage type="loading" message="Logging in..." />

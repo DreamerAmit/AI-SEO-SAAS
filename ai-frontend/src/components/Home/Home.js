@@ -57,7 +57,11 @@ export default function Home() {
               </p>
 
               {/* CTA Buttons */}
-              <div className="mt-10 flex items-center justify-center gap-x-6">
+              <div className="mt-10 flex flex-col items-center justify-center gap-y-4">
+                {/* Promotional text with smaller font size */}
+                <p className="text-sm text-gray-300 font-medium tracking-wide">
+                  Get 5 free image credits • No credit card required
+                </p>
                 <Link
                   to="/register"
                   className="rounded-md bg-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"

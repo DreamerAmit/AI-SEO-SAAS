@@ -11,6 +11,7 @@ const UploadImages = () => {
   const [error, setError] = useState(null);
   const [chatGptPrompt, setChatGptPrompt] = useState('');
   const [remainingCredits, setRemainingCredits] = useState(null);
+  const [progress, setProgress] = useState(0);
   const navigate = useNavigate();
 
   // Fetch remaining credits when component mounts
@@ -85,7 +86,7 @@ const UploadImages = () => {
 
   const handleGenerateAltText = async () => {
     try {
-      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      const maxSize = 5 * 1024 * 1024;
       const oversizedFiles = selectedFiles.filter(file => file.size > maxSize);
       
       if (oversizedFiles.length > 0) {
@@ -95,13 +96,26 @@ const UploadImages = () => {
 
       setUploading(true);
       setError(null);
-      const userId = getUserId();
+      setProgress(0);
+
+      const totalImages = selectedFiles.length;
+      const timePerImage = 3000; // 3 seconds per image
+      const totalTime = totalImages * timePerImage;
+      const updateInterval = 100; // Update progress every 100ms
+      let elapsedTime = 0;
+
+      // Start progress timer
+      const progressTimer = setInterval(() => {
+        elapsedTime += updateInterval;
+        const calculatedProgress = Math.min((elapsedTime / totalTime) * 100, 95);
+        setProgress(Math.round(calculatedProgress));
+      }, updateInterval);
 
       const formData = new FormData();
       selectedFiles.forEach(file => {
         formData.append('images', file);
       });
-      formData.append('userId', userId);
+      formData.append('userId', getUserId());
       formData.append('chatGptPrompt', chatGptPrompt);
 
       const response = await axios.post(
@@ -115,17 +129,131 @@ const UploadImages = () => {
         }
       );
 
+      // Clear progress timer
+      clearInterval(progressTimer);
+
       if (response.data.success) {
+        setProgress(100);
         setRemainingCredits(response.data.remainingCredits);
-        navigate('/images');
+        
+        // Short delay to show 100% completion
+        setTimeout(() => {
+          navigate('/images');
+        }, 500);
       }
     } catch (error) {
       console.error('Error:', error);
       setError(error.response?.data?.message || 'Failed to upload and process images');
+      setProgress(0);
     } finally {
       setUploading(false);
     }
   };
+
+  const LoadingDots = () => (
+    <span className="loading-dots">
+      <span className="dot dot1">.</span>
+      <span className="dot dot2">.</span>
+      <span className="dot dot3">.</span>
+      <style jsx="true">{`
+        .loading-dots {
+          display: inline-block;
+          margin-left: 8px;
+        }
+        .dot {
+          opacity: 0;
+          display: inline-block;
+          margin-left: 4px;
+          font-size: 24px;
+          font-weight: bold;
+          animation: showHideDot 1.5s ease-in-out infinite;
+        }
+        .dot1 {
+          color: #3B82F6; /* blue-500 */
+        }
+        .dot2 {
+          color: #10B981; /* emerald-500 */
+        }
+        .dot3 {
+          color: #6366F1; /* indigo-500 */
+        }
+        .dot:nth-child(1) {
+          animation-delay: 0s;
+        }
+        .dot:nth-child(2) {
+          animation-delay: 0.5s;
+        }
+        .dot:nth-child(3) {
+          animation-delay: 1s;
+        }
+        @keyframes showHideDot {
+          0% { opacity: 0; transform: scale(0.5); }
+          50% { opacity: 1; transform: scale(1.2); }
+          100% { opacity: 0; transform: scale(0.5); }
+        }
+      `}</style>
+    </span>
+  );
+
+  const ProcessingPopup = () => (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-6">Processing Your Images</h2>
+          
+          {/* Progress Circle */}
+          <div className="relative inline-flex mb-6">
+            <div className="w-24 h-24">
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                {/* Background circle */}
+                <circle
+                  className="text-gray-200"
+                  strokeWidth="8"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="42"
+                  cx="50"
+                  cy="50"
+                />
+                {/* Progress circle */}
+                <circle
+                  className="text-blue-600"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="42"
+                  cx="50"
+                  cy="50"
+                  style={{
+                    strokeDasharray: `${2 * Math.PI * 42}`,
+                    strokeDashoffset: `${2 * Math.PI * 42 * (1 - progress / 100)}`,
+                    transform: 'rotate(-90deg)',
+                    transformOrigin: '50% 50%',
+                    transition: 'stroke-dashoffset 0.1s ease'
+                  }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xl font-semibold">{Math.round(progress)}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <p className="text-gray-600">
+              Processing {selectedFiles.length} {selectedFiles.length === 1 ? 'image' : 'images'}
+              <LoadingDots />
+            </p>
+          </div>
+
+          {/* <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
+            You can safely navigate away. Your images will continue processing in the background.
+          </div> */}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="container mx-auto p-4">
@@ -224,29 +352,7 @@ const UploadImages = () => {
       </div>
 
       {uploading && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-          <div className="bg-white p-5 rounded-lg flex flex-col items-center">
-            <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4">
-              <style jsx>{`
-                .loader {
-                  border-top-color: #4f46e5;
-                  -webkit-animation: spinner 1.5s linear infinite;
-                  animation: spinner 1.5s linear infinite;
-                }
-                @-webkit-keyframes spinner {
-                  0% { -webkit-transform: rotate(0deg); }
-                  100% { -webkit-transform: rotate(360deg); }
-                }
-                @keyframes spinner {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
-            </div>
-            <h2 className="text-center text-xl font-semibold">Generating Alt Text...</h2>
-            <p className="text-center">This may take a few moments.</p>
-          </div>
-        </div>
+        <ProcessingPopup />
       )}
 
       <div className="mt-8 bg-green-100 border-l-4 border-green-500 p-4">

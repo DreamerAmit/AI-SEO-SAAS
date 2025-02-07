@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const { connectDB, query } = require('./connectDB');
 const userRoutes = require('./routes/usersRouter');
 const sequelize = require('./config/database');
@@ -17,17 +16,42 @@ const fs = require('fs');
 
 const app = express();
 
-// CORS configuration
-const allowedOrigins = ['http://localhost:3002', 'http://localhost:3001', 'http://localhost:3000','http://pic2alt.com','https://pic2alt.com'];
+// Update CORS configuration
+const allowedOrigins = [
+  'http://localhost:3002', 
+  'http://localhost:3001', 
+  'http://localhost:3000',
+  'http://pic2alt.com',
+  'https://pic2alt.com',
+  'https://bc93-2405-204-901b-aaa3-ca6-7ce5-9b2c-196a.ngrok-free.app'
+];
 
-app.use(cors({
-  origin: function(origin, callback) {
-    console.log('Request origin:', origin);
-    callback(null, true); // Allow all origins temporarily
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], // Explicitly allow all methods
-  credentials: true
-}));
+// Replace your existing CORS configuration with this:
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Log the origin for debugging
+  console.log('Request origin:', origin);
+  
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  }
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.status(200).end();
+    return;
+  }
+
+  next();
+});
 
 // Add this middleware to log all incoming requests
 app.use((req, res, next) => {
@@ -112,10 +136,13 @@ process.on('SIGTERM', () => {
   });
 });
 
-// Error handling middleware should come last
+// Add error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Something broke!');
+  console.error('Error:', err);
+  res.status(500).json({
+    status: 'error',
+    message: err.message
+  });
 });
 
 app.get('/test', (req, res) => {

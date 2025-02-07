@@ -176,4 +176,87 @@ usersRouter.get("/subscription-details", isAuthenticated, getUserProfileWithSubs
 usersRouter.get("/billing-history", isAuthenticated, getUserPaymentHistory);
 usersRouter.patch("/cancel-subscription", isAuthenticated, cancelSubscriptionRenewal);
 
+// Add the Google auth endpoint alongside other auth routes
+usersRouter.post('/auth/google', async (req, res) => {
+  try {
+    console.log('Received Google auth request:', req.body);
+    
+    const { email, googleId, firstName, lastName, isLogin } = req.body;
+
+    // Check if user exists
+    let user = await db.query(
+      'SELECT * FROM "Users" WHERE email = $1 OR google_id = $2',
+      [email, googleId]
+    );
+
+    // If user exists, handle both login and registration cases
+    if (user.rows.length > 0) {
+      const token = jwt.sign({ id: user.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+      
+      return res.json({
+        status: 'success',
+        token,
+        user: user.rows[0],
+        isExistingUser: true
+      });
+    }
+
+    // If user doesn't exist and it's a login attempt
+    if (isLogin) {
+      return res.json({
+        status: 'success',
+        isExistingUser: false
+      });
+    }
+
+    // If user doesn't exist and it's a registration attempt, continue with existing registration logic
+    const randomPassword = crypto.randomBytes(32).toString('hex');
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(randomPassword, salt);
+    const now = new Date();
+
+    // Start transaction for new user registration
+    await db.query('BEGIN');
+
+    const { rows: [newUser] } = await db.query(
+      `INSERT INTO "Users" (
+        email, google_id, "firstName", "lastName", provider, password, 
+        "isEmailConfirmed", "createdAt", "updatedAt"
+      ) VALUES ($1, $2, $3, $4, 'google', $5, true, $6, $6) RETURNING *`,
+      [email, googleId, firstName, lastName, hashedPassword, now]
+    );
+
+    // Create customer in payment service
+    const customer = await paymentService.createCustomer({
+      user_id: newUser.id,
+      customer_external_id: newUser.id,
+      name: `${newUser.firstName} ${newUser.lastName}`,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email
+    });
+
+    console.log('Customer creation response:', customer);
+
+    await db.query('COMMIT');
+
+    const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+    return res.json({
+      status: 'success',
+      token,
+      user: newUser,
+      isExistingUser: false
+    });
+    
+  } catch (error) {
+    await db.query('ROLLBACK');
+    console.error('Google auth error details:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+});
+
 module.exports = usersRouter;
