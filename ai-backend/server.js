@@ -25,6 +25,7 @@ const allowedOrigins = [
   'http://pic2alt.com',
   'https://pic2alt.com',
   'https://www.pic2alt.com',
+  'http://www.pic2alt.com',
   'https://bc93-2405-204-901b-aaa3-ca6-7ce5-9b2c-196a.ngrok-free.app'
 ];
 
