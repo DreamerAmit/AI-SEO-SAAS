@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport, FaCloudUploadAlt, FaImage } from 'react-icons/fa';
 import { BsClipboard } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -101,6 +101,10 @@ const Images = () => {
     navigate('/upload-images');
   };
 
+  const handleCaptionPageClick = () => {
+    navigate('/caption-generator');
+  };
+
   const handleExport = () => {
     const dataToExport = selectedImages.length > 0
       ? images.filter(image => selectedImages.includes(image.id))
@@ -191,6 +195,9 @@ const Images = () => {
           </button>
           <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleUploadClick}>
             <FaCloudUploadAlt className="mr-2" /> Upload Images
+          </button>
+          <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleCaptionPageClick}>
+            <FaImage className="mr-2" /> Caption Generator
           </button>
           <button 
             className="bg-white text-black px-4 py-2 rounded border border-gray-300 flex items-center"

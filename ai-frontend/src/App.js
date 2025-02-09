@@ -29,6 +29,7 @@ import './App.css';  // or wherever your global CSS file is located
 import { Toaster } from 'react-hot-toast';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import CaptionGenerator from "./components/Images/CaptionGenerator";
 
 export default function App() {
   //custom auth hook
@@ -96,6 +97,14 @@ export default function App() {
             <Route path="/help" element={<Help />} />
             <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
             <Route path="/upload-images" element={<UploadImages />} />
+            <Route
+              path="/caption-generator"
+              element={
+                <AuthRoute>
+                  <CaptionGenerator />
+                </AuthRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </GoogleOAuthProvider>

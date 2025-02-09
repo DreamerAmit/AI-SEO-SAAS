@@ -13,6 +13,7 @@ const webhookRoutes = require('./routes/webhook');
 const paymentRoutes = require('./routes/paymentRoutes');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
 
 const app = express();
 
@@ -165,8 +166,9 @@ if (!fs.existsSync(uploadDir)) {
     console.log('Created uploads directory');
 }
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(uploadDir));
+// Serve files from the existing uploads directory
+// This will work for both regular uploads and captioned images
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Add a test endpoint
 app.get('/test-upload-dir', (req, res) => {
