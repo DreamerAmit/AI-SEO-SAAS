@@ -8,7 +8,7 @@ const { upload, uploadAndGenerateAltText } = require('../controllers/imageupload
 const fs = require('fs');
 const path = require('path');
 const { generateStyledCaption } = require('../controllers/captionController');
-const uploadConfig = require('../config/multerConfig');
+
 
 
 const imageRouter = express.Router();
@@ -212,7 +212,7 @@ imageRouter.delete('/altText', async (req, res) => {
 
 // Caption generation route with multer middleware
 imageRouter.post('/generate-styled-caption', 
-  uploadConfig.single('image'),
+  upload.single('image'),
   generateStyledCaption
 );
 
