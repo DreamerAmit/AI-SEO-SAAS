@@ -212,7 +212,7 @@ imageRouter.delete('/altText', async (req, res) => {
 
 // Caption generation route with multer middleware
 imageRouter.post('/generate-styled-caption', 
-  upload.single('image'),
+  uploadConfig.single('image'),
   generateStyledCaption
 );
 
