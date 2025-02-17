@@ -233,7 +233,7 @@ const processImages = async (files, uploadedUrls, userIdInt, prompt) => {
                             ]
                         }
                     ],
-                    max_tokens: 50,
+                    max_tokens: 500,
                     temperature: 0.3
                 }, {
                     headers: {

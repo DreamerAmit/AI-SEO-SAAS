@@ -187,23 +187,23 @@ const Images = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Images</h1>
-        <div className="flex space-x-2">
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleScrapePageClick}>
-            <BsClipboard className="mr-2" /> Scrape Page
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">Images</h1>
+        <div className="flex flex-wrap gap-2">
+          <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleScrapePageClick}>
+            <BsClipboard className="mr-1" /> Scrape
           </button>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleUploadClick}>
-            <FaCloudUploadAlt className="mr-2" /> Upload Images
+          <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleUploadClick}>
+            <FaCloudUploadAlt className="mr-1" /> Upload
           </button>
-          <button className="bg-indigo-600 text-white px-4 py-2 rounded flex items-center" onClick={handleCaptionPageClick}>
-            <FaImage className="mr-2" /> Caption Generator
+          <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleCaptionPageClick}>
+            <FaImage className="mr-1" /> Caption
           </button>
           <button 
-            className="bg-white text-black px-4 py-2 rounded border border-gray-300 flex items-center"
+            className="bg-white text-black px-3 py-2 rounded border border-gray-300 flex items-center text-sm"
             onClick={handleExport}
           >
-            <FaFileExport className="mr-2" /> Export
+            <FaFileExport className="mr-1" /> Export
           </button>
         </div>
       </div>
@@ -235,71 +235,75 @@ const Images = () => {
             Delete
           </button>
         </div>
-        <table className="min-w-full divide-y divide-gray-200 table-fixed">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="w-16 px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
-                #
-              </th>
-              <th scope="col" className="w-16 px-6 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
-                <input 
-                  type="checkbox"
-                  onChange={handleSelectAllChange}
-                  checked={selectedImages.length === paginatedImages.length && paginatedImages.length > 0}
-                  className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
-                />
-              </th>
-              <th scope="col" className="w-[25%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider overflow-hidden">
-                URL
-              </th>
-              <th scope="col" className="w-[75%] px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider overflow-hidden">
-                Alt Text
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {Array.isArray(paginatedImages) && paginatedImages.length > 0 ? (
-              paginatedImages.map((image, index) => (
-                <tr key={image.id || index} className="hover:bg-gray-100">
-                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-black text-center align-middle">
-                    {index + 1 + (currentPage - 1) * itemsPerPage} {/* Adjust index for pagination */}
-                  </td>
-                  <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-black text-center align-middle">
-                    <input 
-                      type="checkbox"
-                      checked={selectedImages.includes(image.id)}
-                      onChange={() => handleCheckboxChange(image.id)}
-                      className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
-                    />
-                  </td>
-                  <td className="px-6 py-3 text-sm text-black">
-                    <div className="truncate max-w-[500px] hover:whitespace-normal hover:break-words">
-                      {image.src}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 text-sm text-black">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCopyAltText(image.alt_text)}
-                        className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                        title="Copy alt text"
-                      >
-                        <FaCopy className="w-4 h-4" />
-                      </button>
-                      <div className="break-words">
-                        {image.alt_text}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="w-[5%] px-2 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
+                  #
+                </th>
+                <th scope="col" className="w-[5%] px-2 py-3 text-center text-xs font-medium text-black uppercase tracking-wider">
+                  <input 
+                    type="checkbox"
+                    onChange={handleSelectAllChange}
+                    checked={selectedImages.length === paginatedImages.length && paginatedImages.length > 0}
+                    className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
+                  />
+                </th>
+                <th scope="col" className="w-[30%] px-2 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                  URL
+                </th>
+                <th scope="col" className="w-[60%] px-2 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+                  Alt Text
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {Array.isArray(paginatedImages) && paginatedImages.length > 0 ? (
+                paginatedImages.map((image, index) => (
+                  <tr key={image.id || index} className="hover:bg-gray-100">
+                    <td className="px-2 py-3 whitespace-nowrap text-sm font-medium text-black text-center">
+                      {index + 1 + (currentPage - 1) * itemsPerPage}
+                    </td>
+                    <td className="px-2 py-3 whitespace-nowrap text-sm font-medium text-black text-center">
+                      <input 
+                        type="checkbox"
+                        checked={selectedImages.includes(image.id)}
+                        onChange={() => handleCheckboxChange(image.id)}
+                        className="w-4 h-4 text-blue-600 border border-gray-300 rounded"
+                      />
+                    </td>
+                    <td className="px-2 py-3 text-sm text-black">
+                      <div className="truncate max-w-[150px] md:max-w-[300px] hover:whitespace-normal hover:break-words">
+                        {image.src}
                       </div>
-                    </div>
+                    </td>
+                    <td className="px-2 py-3 text-sm text-black">
+                      <div className="flex items-start gap-2">
+                        <button
+                          onClick={() => handleCopyAltText(image.alt_text)}
+                          className="text-gray-600 hover:text-gray-800 transition-colors duration-200 mt-1 flex-shrink-0"
+                          title="Copy alt text"
+                        >
+                          <FaCopy className="w-4 h-4" />
+                        </button>
+                        <div className="break-words min-w-0 flex-1">
+                          {image.alt_text}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="px-2 py-3 whitespace-nowrap text-sm text-gray-500 text-center">
+                    No images found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">No images found.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
         <div className="flex justify-end p-4">
           <label htmlFor="itemsPerPage" className="mr-2">Items per page:</label>
           <select id="itemsPerPage" value={itemsPerPage} onChange={handleItemsPerPageChange} className="border border-gray-300 rounded px-2 py-1">
