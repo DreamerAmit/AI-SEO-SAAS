@@ -1,3 +1,5 @@
 ai-backend/.env
 node_modules
 uploads/
+docker-compose.yml
+Dockerfile

@@ -17,11 +17,15 @@ import CheckoutForm from "./components/StripePayment/CheckoutForm";
 import PaymentSuccess from "./components/StripePayment/PaymentSuccess";
 import ContentGenerationHistory from "./components/ContentGeneration/ContentHistory";
 import AppFeatures from "./components/Support/Support";
-import AboutUs from "./components/About/About";
+//import AboutUs from "./components/About/About";
+import Blogs from "./components/Blogs/Blogs";
+import BlogPost1 from './components/Blogs/posts/BlogPost1';
+import BlogPost2 from './components/Blogs/posts/BlogPost2';
+import BlogPost3 from './components/Blogs/posts/BlogPost3';
 import Images from './components/Images/Images';
 import AccountPage from './components/Account/Account';
 import Help from './components/Help/Help';
-import ConfirmEmail from './components/Users/EmailConfirmation';
+import EmailConfirmation from './components/Users/emailConfirmation';
 import ScrapePage from './components/Images/ScrapePage';  
 import ScrapedImages from './components/Images/ScrapedImages';
 import UploadImages from './components/Images/UploadImages';
@@ -89,13 +93,16 @@ export default function App() {
             />
             <Route path="/success" element={<PaymentSuccess />} />
             <Route path="/support" element={<AppFeatures />} />
-            <Route path="/about" element={<AboutUs />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blog/post1" element={<BlogPost1 />} />
+            <Route path="/blog/post2" element={<BlogPost2 />} />
+            <Route path="/blog/post3" element={<BlogPost3 />} />
             <Route path="/images" element={<Images />} /> 
             <Route path="/scrape" element={<ScrapePage />} />
             <Route path="/scraped-images" element={<ScrapedImages />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/help" element={<Help />} />
-            <Route path="/confirm-email/:token" element={<ConfirmEmail />} />
+            <Route path="/confirm-email/:token" element={<EmailConfirmation />} />
             <Route path="/upload-images" element={<UploadImages />} />
             <Route
               path="/caption-generator"

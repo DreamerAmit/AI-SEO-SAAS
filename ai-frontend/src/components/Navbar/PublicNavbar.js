@@ -7,7 +7,7 @@ const navigation = [
   { name: "Home", href: "/" },
   { name: "Support", href: "/support" },
   { name: "Pricing", href: "/plans" },
-  { name: "About", href: "/about" }
+  { name: "Blogs", href: "/blogs" }
 ];
 
 export default function PublicNavbar() {
