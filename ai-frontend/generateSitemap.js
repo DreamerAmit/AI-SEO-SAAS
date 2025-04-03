@@ -5,7 +5,7 @@ require('dotenv').config(); // This will load your .env file
 async function generateSitemap() {
   // Get hostname based on environment
   const hostname = process.env.NODE_ENV === 'production'
-    ? 'https://your-production-domain.com'  // Replace with your actual production domain
+    ? 'https://www.pic2alt.com'  // Replace with your actual production domain
     : 'http://localhost:3002';  // Your local development port
 
   console.log('Generating sitemap for:', hostname);
