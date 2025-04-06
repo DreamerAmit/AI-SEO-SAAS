@@ -76,13 +76,13 @@ const createReel = async (req, res) => {
                         filter: 'drawtext',
                         options: {
                             text: 'Created by Pic2Alt.com',
-                            fontsize: 24,
+                            fontsize: 36,              // Increased for mobile visibility
                             fontcolor: 'white',
-                            x: 'w-280',           // Moved further left to avoid cutting
-                            y: '30',              // Slightly lower from the top
-                            box: 1,               // Enable background box
-                            boxcolor: 'black@0.7', // Semi-transparent black background
-                            boxborderw: 10,        // Increased padding
+                            x: 'w-480',                // Moved significantly further left
+                            y: '40',                   // Adjusted vertical position
+                            box: 1,
+                            boxcolor: 'black@0.7',
+                            boxborderw: 15,            // Increased padding
                             shadowcolor: 'black',
                             shadowx: 1,
                             shadowy: 1
