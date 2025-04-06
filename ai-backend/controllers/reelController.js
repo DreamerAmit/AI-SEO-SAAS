@@ -41,50 +41,67 @@ const createReel = async (req, res) => {
 
         // Create video using FFmpeg
         await new Promise((resolve, reject) => {
-            ffmpeg()
+            const command = ffmpeg();
+
+            // Use concat demuxer for images
+            command
                 .input(concatFilePath)
                 .inputOptions([
                     '-f concat',
                     '-safe 0'
-                ])
+                ]);
+
+            // Add audio file with loop if needed
+            command
                 .input(audioFile.path)
                 .inputOptions([
-                    '-stream_loop -1'
-                ])
+                    '-stream_loop -1' // Loop audio if it's shorter than video
+                ]);
+
+            command
                 .outputOptions([
-                    '-c:v libx264',
-                    '-pix_fmt yuv420p',
-                    '-r 30',
-                    '-s 1080x1920',
-                    '-b:v 2M',
-                    '-shortest',
-                    '-movflags +faststart'
+                    '-c:v libx264',         // Video codec
+                    '-pix_fmt yuv420p',     // Pixel format
+                    '-r 30',                // Frame rate
+                    '-s 1080x1920',         // Output size (Instagram story format)
+                    '-b:v 2M',              // Video bitrate
+                    '-shortest',            // Match shortest input length
+                    '-movflags +faststart'  // Web playback optimization
                 ])
                 .videoFilters([
+                    'scale=1080:1920:force_original_aspect_ratio=decrease',  // Scale maintaining aspect ratio
+                    'pad=1080:1920:(ow-iw)/2:(oh-ih)/2:white',  // Center the image with white padding
+                    // Single watermark filter with embedded box
                     {
-                        filter: 'scale',
-                        options: '1080:1920:force_original_aspect_ratio=decrease'
-                    },
-                    {
-                        filter: 'pad',
-                        options: '1080:1920:(ow-iw)/2:(oh-ih)/2:white'
+                        filter: 'drawtext',
+                        options: {
+                            text: 'Created by Pic2Alt.com',
+                            fontsize: 24,
+                            fontcolor: 'white',
+                            x: 'w-280',           // Moved further left to avoid cutting
+                            y: '30',              // Slightly lower from the top
+                            box: 1,               // Enable background box
+                            boxcolor: 'black@0.7', // Semi-transparent black background
+                            boxborderw: 10,        // Increased padding
+                            shadowcolor: 'black',
+                            shadowx: 1,
+                            shadowy: 1
+                        }
                     }
                 ])
-                .audioFilters('volume=1')
-                .on('start', command => {
-                    console.log('FFmpeg command:', command);
+                .on('start', (command) => {
+                    console.log('FFmpeg process started:', command);
                 })
-                .on('progress', progress => {
-                    console.log('Processing:', progress.percent, '% done');
-                })
-                .on('error', (err, stdout, stderr) => {
-                    console.error('FFmpeg error:', err);
-                    console.error('FFmpeg stderr:', stderr);
-                    reject(err);
+                .on('progress', (progress) => {
+                    console.log('Processing: ' + progress.percent + '% done');
                 })
                 .on('end', () => {
-                    console.log('FFmpeg processing finished');
+                    console.log('FFmpeg process completed');
                     resolve();
+                })
+                .on('error', (err) => {
+                    console.error('Error:', err);
+                    reject(err);
                 })
                 .save(outputPath);
         });
