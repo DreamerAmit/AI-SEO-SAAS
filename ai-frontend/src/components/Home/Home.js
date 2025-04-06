@@ -41,20 +41,20 @@ export default function Home() {
                 </div>
                 
                 <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-                  <div className="text-indigo-400 text-4xl mb-4">💼</div>
-                  <h3 className="text-xl font-semibold text-white mb-2">LinkedIn Posts</h3>
+                  <div className="text-indigo-400 text-4xl mb-4">🎬</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">AI Reel Generator</h3>
                   <p className="text-gray-300">
-                    Convert images to professional LinkedIn post content
+                    Turn multiple images into eye-catching video reels with captions
                   </p>
                 </div>
               </div>
 
-              {/* Value Proposition */}
+              {/* Value Proposition
               <p className="mt-6 text-lg leading-8 text-gray-300 max-w-3xl mx-auto">
                 Process up to 50 images simultaneously. Save hours of manual work with our 
                 AI-powered image analysis. Perfect for social media managers, content creators, 
                 and web developers.
-              </p>
+              </p> */}
 
               {/* CTA Buttons */}
               <div className="mt-10 flex flex-col items-center justify-center gap-y-4">

@@ -8,8 +8,9 @@ const { upload, uploadAndGenerateAltText } = require('../controllers/imageupload
 const fs = require('fs');
 const path = require('path');
 const { generateStyledCaption } = require('../controllers/captionController');
-
-
+const reelController = require('../controllers/reelController');
+const auth = require('../middlewares/isAuthenticated');
+const { createReel } = require('../controllers/reelController');
 
 const imageRouter = express.Router();
 
@@ -212,8 +213,19 @@ imageRouter.delete('/altText', async (req, res) => {
 
 // Caption generation route with multer middleware
 imageRouter.post('/generate-styled-caption', 
+  auth,
   upload.single('image'),
   generateStyledCaption
+);
+
+// Modified reel route to use controller
+imageRouter.post('/createReels', 
+    auth,
+    upload.fields([
+        { name: 'audioFile', maxCount: 1 },
+        { name: 'images', maxCount: 5 }
+    ]),
+    createReel  // Use the controller function
 );
 
 module.exports = imageRouter;

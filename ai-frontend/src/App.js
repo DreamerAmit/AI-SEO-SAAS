@@ -34,6 +34,7 @@ import { Toaster } from 'react-hot-toast';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CaptionGenerator from "./components/Images/CaptionGenerator";
+import ReelGenerator from './components/Images/ReelGenerator';
 
 export default function App() {
   //custom auth hook
@@ -112,6 +113,7 @@ export default function App() {
                 </AuthRoute>
               }
             />
+            <Route path="/reel-generator" element={<ReelGenerator />} />
           </Routes>
         </BrowserRouter>
       </GoogleOAuthProvider>

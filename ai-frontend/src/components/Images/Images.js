@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport, FaCloudUploadAlt, FaImage } from 'react-icons/fa';
+import { FaSearch, FaEdit, FaTrash, FaCopy, FaExternalLinkAlt, FaPlus, FaFileImport, FaFileExport, FaCloudUploadAlt, FaImage, FaVideo } from 'react-icons/fa';
 import { BsClipboard } from 'react-icons/bs';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -105,6 +105,10 @@ const Images = () => {
     navigate('/caption-generator');
   };
 
+  const handleReelPageClick = () => {
+    navigate('/reel-generator');
+  };
+
   const handleExport = () => {
     const dataToExport = selectedImages.length > 0
       ? images.filter(image => selectedImages.includes(image.id))
@@ -198,6 +202,9 @@ const Images = () => {
           </button>
           <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleCaptionPageClick}>
             <FaImage className="mr-1" /> Caption
+          </button>
+          <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleReelPageClick}>
+            <FaVideo className="mr-1" /> Reel
           </button>
           <button 
             className="bg-white text-black px-3 py-2 rounded border border-gray-300 flex items-center text-sm"
