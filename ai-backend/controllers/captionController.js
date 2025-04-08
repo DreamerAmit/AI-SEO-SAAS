@@ -61,76 +61,203 @@ const upload = multer({
 
 const generateStyledCaption = async (req, res) => {
   try {
-    const { imageId } = req.params;
-    const { caption } = req.body;
+    const { userId } = req.body;
+    const userPrompt = req.body.prompt; // This might be undefined
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image file uploaded'
+      });
+    }
 
-    // If caption is a string containing JSON, try to parse it
-    let captionText = caption;
+    // Ensure upload directory exists
+    ensureUploadDir();
+
+    console.log('Received file:', req.file);
+    console.log('Current environment:', process.env.NODE_ENV);
+    console.log('Is Production?', isProduction);
+
+    const file = req.file;
+    
+    // Read the file from disk instead of using buffer
+    const imageBuffer = fsSync.readFileSync(file.path);
+    const base64Image = imageBuffer.toString('base64');
+
+    // Generate caption using OpenAI based on whether user provided a prompt
+    const analysisResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a caption designer. Return the caption in this exact JSON format:
+          {
+            "caption": "your caption here",
+            "position": "bottom",
+            "style": {
+              "font": "Arial-Italic",
+              "size": 10,
+              "color": "#FFFFFF",
+              "background": "rgba(0,0,0,0.7)"
+            }
+          }
+          ${userPrompt ? 'Use exactly this caption: ' + userPrompt : 'Generate a concise caption in 10 words or less.'}`
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: userPrompt || "Analyze this image and provide a concise caption in 10 words or less"
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 500,
+      temperature: userPrompt ? 0.3 : 0.7
+    });
+
+    // Clean up the response by removing markdown code block markers and parse
+    let responseContent;
     try {
-      if (typeof caption === 'string' && caption.trim().startsWith('{')) {
-        const parsedCaption = JSON.parse(caption);
-        captionText = parsedCaption.caption || caption;
+      const cleanResponse = analysisResponse.choices[0].message.content
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      
+      // If response starts with asterisks or other markdown, extract just the caption
+      if (cleanResponse.startsWith('**')) {
+        const caption = cleanResponse.replace(/\*\*/g, '').replace(/^Caption:\s*/, '').trim();
+        responseContent = {
+          caption,
+          position: "bottom",
+          style: {
+            font: "Arial-Italic",
+            size: 10,
+            color: "#FFFFFF",
+            background: "rgba(0,0,0,0.7)"
+          }
+        };
+      } else {
+        responseContent = JSON.parse(cleanResponse);
       }
     } catch (parseError) {
-      console.log('Caption parsing error:', parseError);
-      // If parsing fails, use the original caption text
-      captionText = caption;
+      console.error('JSON Parse Error:', parseError);
+      // Fallback: create valid JSON with just the caption
+      responseContent = {
+        caption: analysisResponse.choices[0].message.content
+          .replace(/\*\*/g, '')
+          .replace(/^Caption:\s*/, '')
+          .trim(),
+        position: "bottom",
+        style: {
+          font: "Arial-Italic",
+          size: 10,
+          color: "#FFFFFF",
+          background: "rgba(0,0,0,0.7)"
+        }
+      };
     }
 
-    // Clean up the caption text
-    captionText = cleanCaption(captionText);
+    console.log('Parsed AI Response:', responseContent);
 
-    const imagePath = path.join(__dirname, '..', 'uploads', imageId);
-    const outputPath = path.join(__dirname, '..', 'uploads', `captioned-${imageId}`);
+    const {
+      caption,
+      position,
+      style
+    } = responseContent;
 
-    // Check if file exists
-    if (!fs.existsSync(imagePath)) {
-      return res.status(404).json({ error: 'Image not found' });
+    // 2. Process image with caption
+    const processedImage = await addCaptionToImage(imageBuffer, caption, position, style);
+    
+    // Create a temporary file for the processed image
+    const tempFilePath = file.path + '-captioned';
+    fsSync.writeFileSync(tempFilePath, processedImage);
+
+    const fileName = `captioned-${file.filename}`;
+    const filePath = UPLOAD_PATH + fileName;
+
+    if (isProduction) {
+      console.log('Using production file handling');
+      try {
+        await copyFile(tempFilePath, filePath);
+        console.log('Captioned file copied successfully to:', filePath);
+        
+        // Clean up temp file
+        fsSync.unlinkSync(tempFilePath);
+      } catch (copyError) {
+        console.error('Copy operation failed:', copyError);
+        throw copyError;
+      }
+    } else {
+      console.log('Using development SFTP handling');
+      const sftp = new Client();
+      try {
+        await sftp.connect({
+          host: process.env.SFTP_HOST,
+          port: 22,
+          username: process.env.SFTP_USER,
+          password: process.env.SFTP_PASSWORD
+        });
+
+        console.log('SFTP Connected successfully');
+        console.log('Uploading captioned file from:', tempFilePath);
+        console.log('To:', filePath);
+
+        await sftp.put(tempFilePath, filePath);
+        console.log('Captioned file uploaded via SFTP:', fileName);
+
+        await sftp.end();
+        
+        // Clean up temp file
+        fsSync.unlinkSync(tempFilePath);
+      } catch (sftpError) {
+        console.error('SFTP Error:', sftpError);
+        throw sftpError;
+      }
     }
 
-    // Process the image with clean caption text
-    await addCaptionToImage(imagePath, captionText, outputPath);
+    // Clean up original file
+    fsSync.unlinkSync(file.path);
 
+    // Store in database
+    const result = await db.query(
+      'INSERT INTO "CaptionedImages" (user_id, original_image, captioned_image, caption, style_data) VALUES (:userId, :originalImage, :captionedImage, :caption, :styleData) RETURNING *',
+      {
+        replacements: {
+          userId,
+          originalImage: file.originalname,
+          captionedImage: fileName,
+          caption,
+          styleData: JSON.stringify({ position, style })
+        },
+        type: QueryTypes.INSERT
+      }
+    );
+
+    // Use the same URL construction as imageuploadController
     res.json({
       success: true,
-      captionedImage: `captioned-${imageId}`
+      captionedImage: {
+        url: `https://pic2alt.com/uploads/${fileName}`,
+        caption: caption
+      }
     });
+
   } catch (error) {
-    console.error('Error generating styled caption:', error);
+    console.error('Error details:', error);
     res.status(500).json({
-      error: 'Failed to generate styled caption',
-      details: error.message
+      success: false,
+      message: 'Failed to generate caption',
+      error: error.message
     });
   }
-};
-
-// Helper function to clean caption text
-const cleanCaption = (text) => {
-  if (typeof text !== 'string') {
-    return '';
-  }
-
-  return text
-    .replace(/\{[^}]+\}/g, '') // Remove JSON-like structures
-    .replace(/\[[^\]]+\]/g, '') // Remove array-like structures
-    .replace(/font:|size:|color:|background:|position:/g, '') // Remove style keys
-    .replace(/Arial-Italic|#FFFFFF|rgba\([^)]+\)/g, '') // Remove style values
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .trim();
-};
-
-// Helper function to validate caption format
-const isValidCaption = (text) => {
-  if (typeof text !== 'string') {
-    return false;
-  }
-  
-  // Check for unwanted formatting
-  const hasJSON = /[{}\[\]]/.test(text);
-  const hasStyleInfo = /(font|size|color|background|position):/.test(text);
-  const hasHTMLTags = /<[^>]*>/.test(text);
-  
-  return !hasJSON && !hasStyleInfo && !hasHTMLTags;
 };
 
 // Helper function to add caption to image
