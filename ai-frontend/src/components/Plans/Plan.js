@@ -200,7 +200,7 @@ export default function Plans() {
           <p className="mx-auto mt-4 max-w-2xl text-center text-lg leading-8 text-gray-300">
             1 credit = 1 image to text generation
             <br />
-            Your first 5 credits are FREE. Purchase a plan or credit pack for additional credits.
+            Your first 25 credits are FREE. Purchase a plan or credit pack for additional credits.
           </p>
 
           {/* Subscription Plans Section */}

@@ -11,16 +11,27 @@ const Spinner = () => (
   </div>
 );
 
-const CaptionGenerator = () => {
+const ImageEditor = () => {
   const navigate = useNavigate();
-  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [captionedImage, setCaptionedImage] = useState(null);
+  const [editedImage, setEditedImage] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [captionPrompt, setCaptionPrompt] = useState('');
+  const [editPrompt, setEditPrompt] = useState('');
   const [remainingCredits, setRemainingCredits] = useState(null);
   const [creditUpdateTrigger, setCreditUpdateTrigger] = useState(0);
+  const [quality, setQuality] = useState('high');
+
+  // Calculate required credits based on quality
+  const getRequiredCredits = () => {
+    switch(quality) {
+      case 'high': return 25;
+      case 'medium': return 10;
+      case 'low': return 5;
+      default: return 25;
+    }
+  };
 
   // Fetch remaining credits when component mounts or creditUpdateTrigger changes
   useEffect(() => {
@@ -54,27 +65,33 @@ const CaptionGenerator = () => {
     }
   };
 
-  const handleFileSelect = (event) => {
+  const handleImageSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Image size should be less than 10MB');
         return;
       }
-      setSelectedFile(file);
+      setSelectedImage(file);
       setImagePreview(URL.createObjectURL(file));
-      setCaptionedImage(null);
+      setEditedImage(null);
     }
   };
 
-  const handleGenerateCaption = async () => {
-    if (!selectedFile) {
+  const handleEditImage = async () => {
+    if (!selectedImage) {
       toast.warning('Please select an image first');
       return;
     }
 
-    if (remainingCredits < 1) {
-      toast.error('You have no credits remaining. Please upgrade your plan.');
+    if (!editPrompt.trim()) {
+      toast.warning('Please enter an edit prompt');
+      return;
+    }
+
+    const requiredCredits = getRequiredCredits();
+    if (remainingCredits < requiredCredits) {
+      toast.error(`You need ${requiredCredits} credits for a ${quality} quality edit. You have ${remainingCredits} credits.`);
       return;
     }
 
@@ -83,17 +100,16 @@ const CaptionGenerator = () => {
       setProgress(0);
 
       const formData = new FormData();
-      formData.append('image', selectedFile);
+      formData.append('image', selectedImage);
       formData.append('userId', getUserId());
-      if (captionPrompt.trim()) {
-        formData.append('prompt', captionPrompt);
-      }
+      formData.append('prompt', editPrompt);
+      formData.append('quality', quality);
 
-      // First deduct the credit
+      // First deduct the credits
       const creditResponse = await axios.post(
         `${process.env.REACT_APP_API_URL}/credits/deduct`,
         {
-          usedCredits: 1
+          usedCredits: requiredCredits
         },
         {
           headers: {
@@ -106,9 +122,9 @@ const CaptionGenerator = () => {
         // Force a refresh of credits
         setCreditUpdateTrigger(prev => prev + 1);
 
-        // Then generate the caption
+        // Then edit the image
         const response = await axios.post(
-          `${process.env.REACT_APP_API_URL}/images/generate-styled-caption`,
+          `${process.env.REACT_APP_API_URL}/images/edit-image`,
           formData,
           {
             headers: {
@@ -116,27 +132,27 @@ const CaptionGenerator = () => {
               'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             onUploadProgress: (progressEvent) => {
-              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              const progress = Math.round((progressEvent.loaded * 50) / progressEvent.total);
               setProgress(progress);
             }
           }
         );
 
         if (response.data.success) {
-          setCaptionedImage(response.data.captionedImage);
-          toast.success('Caption generated successfully!');
+          setEditedImage(response.data.editedImage);
+          toast.success('Image edited successfully!');
           // Force another refresh of credits after successful generation
           setCreditUpdateTrigger(prev => prev + 1);
         }
       }
     } catch (error) {
       console.error('Error:', error);
-      // If caption generation fails, refund the credit and refresh credits
+      // If image editing fails, refund the credits and refresh credits
       try {
         const refundResponse = await axios.post(
           `${process.env.REACT_APP_API_URL}/credits/refund`,
           {
-            refundCredits: 1
+            refundCredits: getRequiredCredits()
           },
           {
             headers: {
@@ -148,29 +164,29 @@ const CaptionGenerator = () => {
           setCreditUpdateTrigger(prev => prev + 1);
         }
       } catch (refundError) {
-        console.error('Error refunding credit:', refundError);
+        console.error('Error refunding credits:', refundError);
       }
-      toast.error('Failed to generate caption');
+      toast.error('Failed to edit image: ' + (error.response?.data?.message || error.message));
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!captionedImage) {
-      toast.warning('Please generate a caption first');
+    if (!editedImage) {
+      toast.warning('Please edit an image first');
       return;
     }
 
     try {
-      const response = await axios.get(captionedImage.url, {
+      const response = await axios.get(editedImage.url, {
         responseType: 'blob'
       });
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'captioned-image.jpg');
+      link.setAttribute('download', 'edited-image.png');
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -183,7 +199,7 @@ const CaptionGenerator = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">AI Caption Generator</h1>
+        <h1 className="text-2xl font-bold mb-6">AI Image Editor</h1>
         
         {/* Credits Display */}
         {remainingCredits !== null && (
@@ -191,71 +207,94 @@ const CaptionGenerator = () => {
             <p className="font-semibold text-red-600">
               You have {remainingCredits} image {remainingCredits === 1 ? 'credit' : 'credits'} remaining
             </p>
+            <p className="text-sm text-gray-700 mt-1">
+              Credit costs: High quality: 25 credits/edit, Medium: 10 credits/edit, Low: 5 credits/edit
+            </p>
           </div>
         )}
 
         {/* Image Upload */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Upload Image (Max 5MB)
+            Upload Image to Edit (Max 10MB)
           </label>
           <input
             type="file"
             accept="image/*"
-            onChange={handleFileSelect}
+            onChange={handleImageSelect}
             className="w-full p-2 border rounded-md"
           />
         </div>
 
-        {/* Image Preview and Result Container */}
+        {/* Quality Selector */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Image Quality
+          </label>
+          <select
+            value={quality}
+            onChange={(e) => setQuality(e.target.value)}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="high">High (25 credits)</option>
+            <option value="medium">Medium (10 credits)</option>
+            <option value="low">Low (5 credits)</option>
+          </select>
+        </div>
+
+        {/* Image Previews */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
           {/* Source Image */}
           <div className="border rounded-lg p-4">
             <h2 className="text-lg font-medium mb-2">Source Image</h2>
-            {imagePreview ? (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full h-auto rounded-lg shadow"
-              />
-            ) : (
-              <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">No image selected</p>
-              </div>
-            )}
+            <div className="space-y-4">
+              {imagePreview ? (
+                <div>
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-auto rounded-lg shadow mt-1"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <p className="text-gray-500">No image selected</p>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Captioned Image */}
+          {/* Edited Image */}
           <div className="border rounded-lg p-4">
-            <h2 className="text-lg font-medium mb-2">Captioned Image</h2>
+            <h2 className="text-lg font-medium mb-2">Edited Image</h2>
             {isProcessing ? (
               <div className="w-full h-64 bg-gray-100 rounded-lg flex flex-col items-center justify-center">
                 <Spinner />
-                <p className="text-gray-600 mt-4">Generating Captioned Image...</p>
+                <p className="text-gray-600 mt-4">Editing Image...</p>
               </div>
-            ) : captionedImage ? (
+            ) : editedImage ? (
               <img
-                src={captionedImage.url}
-                alt="Captioned"
+                src={editedImage.url}
+                alt="Edited"
                 className="w-full h-auto rounded-lg shadow"
               />
             ) : (
               <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">Caption not generated yet</p>
+                <p className="text-gray-500">Image not edited yet</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Caption Prompt Input */}
+        {/* Edit Prompt Input */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Caption Prompt
+            Edit Prompt
           </label>
           <textarea
-            value={captionPrompt}
-            onChange={(e) => setCaptionPrompt(e.target.value)}
-            placeholder="Enter your caption prompt here..."
+            value={editPrompt}
+            onChange={(e) => setEditPrompt(e.target.value)}
+            placeholder="Describe the edits you want to make to the image..."
             className="w-full p-2 border rounded-md h-24 resize-none"
           />
         </div>
@@ -263,28 +302,28 @@ const CaptionGenerator = () => {
         {/* Buttons Container */}
         <div className="flex flex-col md:flex-row gap-4">
           <button
-            onClick={handleGenerateCaption}
-            disabled={!selectedFile || isProcessing}
+            onClick={handleEditImage}
+            disabled={!selectedImage || !editPrompt.trim() || isProcessing || remainingCredits < getRequiredCredits()}
             className={`flex-1 py-2 px-4 rounded-md ${
-              isProcessing || !selectedFile
+              !selectedImage || !editPrompt.trim() || isProcessing || remainingCredits < getRequiredCredits()
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
             } text-white font-medium flex items-center justify-center gap-2`}
           >
             {isProcessing && <Spinner />}
-            {isProcessing ? 'Generating Caption...' : 'Generate Caption'}
+            {isProcessing ? 'Editing Image...' : `Edit Image (${getRequiredCredits()} credits)`}
           </button>
 
           <button
             onClick={handleDownload}
-            disabled={!captionedImage}
+            disabled={!editedImage}
             className={`flex-1 py-2 px-4 rounded-md ${
-              !captionedImage
+              !editedImage
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-green-600 hover:bg-green-700'
             } text-white font-medium`}
           >
-            Download Captioned Image
+            Download Edited Image
           </button>
         </div>
 
@@ -302,9 +341,23 @@ const CaptionGenerator = () => {
             </p>
           </div>
         )}
+
+        {/* Instructions */}
+        <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+          <h3 className="font-medium text-gray-700">How to use the image editor:</h3>
+          <ol className="mt-2 ml-5 list-decimal text-sm text-gray-600">
+            <li>Upload an image you want to edit</li>
+            <li>Enter a prompt describing how you want to transform the image</li>
+            <li>Choose the quality level (higher quality uses more credits)</li>
+            <li>Click "Edit Image" to generate the transformed version</li>
+          </ol>
+          <p className="mt-2 text-sm text-gray-600">
+            <strong>Tip:</strong> Be specific in your prompts to get the best results.
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default CaptionGenerator;
+export default ImageEditor;

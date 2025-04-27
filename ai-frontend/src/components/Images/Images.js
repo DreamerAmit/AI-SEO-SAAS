@@ -201,7 +201,7 @@ const Images = () => {
             <FaCloudUploadAlt className="mr-1" /> Upload
           </button>
           <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleCaptionPageClick}>
-            <FaImage className="mr-1" /> Caption
+            <FaEdit className="mr-1" /> Edit Image
           </button>
           <button className="bg-indigo-600 text-white px-3 py-2 rounded flex items-center text-sm" onClick={handleReelPageClick}>
             <FaVideo className="mr-1" /> Reel

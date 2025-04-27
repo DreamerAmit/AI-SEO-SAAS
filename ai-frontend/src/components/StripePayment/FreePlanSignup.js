@@ -7,7 +7,7 @@ const FreePlanSignup = () => {
   const planDetails = {
     name: "Free",
     price: "$0.00/month",
-    features: ["5 Credits", "1 User", "Basic Support"],
+    features: ["25 Credits", "1 User", "Basic Support"],
   };
 
   //mutation

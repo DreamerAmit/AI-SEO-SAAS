@@ -11,7 +11,7 @@ export default function FreeTrial() {
             Start using our app today. */}
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">
-          Your first 5 images are free. No credit card required.
+          Your first 25 image credits are free. No credit card required.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link

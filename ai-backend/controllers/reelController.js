@@ -7,9 +7,11 @@ const createReel = async (req, res) => {
     try {
         const audioFile = req.files.audioFile[0];
         const images = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
+        const skipCaptioning = req.body.skipCaptioning === 'true';
         
         console.log('Processing images:', images);
         console.log('Audio file:', audioFile);
+        console.log('Skip captioning:', skipCaptioning);
 
         // Create temporary directory with absolute path
         const tempDir = path.join(process.cwd(), 'uploads', 'temp');

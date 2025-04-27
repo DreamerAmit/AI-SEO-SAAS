@@ -15,7 +15,7 @@ export default function BetaMessage() {
             Thanks for Your Interest in our Pricing Section!
           </h2>
           <p className="mt-6 text-lg leading-8 text-gray-300">
-            We're currently in beta and integrating our payment gateway. Your first 5 credits are on us, signup for free trial if you haven't already!
+            We're currently in beta and integrating our payment gateway. Your first 25 credits are on us, signup for free trial if you haven't already!
             Have questions about our pricing? We'd love to hear from you.
           </p>
 

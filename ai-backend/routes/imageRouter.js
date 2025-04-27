@@ -7,10 +7,11 @@ const multer = require('multer');
 const { upload, uploadAndGenerateAltText } = require('../controllers/imageuploadController');
 const fs = require('fs');
 const path = require('path');
-const { generateStyledCaption } = require('../controllers/captionController');
+const { editImage } = require('../controllers/captionController');
 const reelController = require('../controllers/reelController');
 const auth = require('../middlewares/isAuthenticated');
 const { createReel } = require('../controllers/reelController');
+const { generateImage } = require('../controllers/imageGenerationController');
 
 const imageRouter = express.Router();
 
@@ -212,10 +213,10 @@ imageRouter.delete('/altText', async (req, res) => {
 });
 
 // Caption generation route with multer middleware
-imageRouter.post('/generate-styled-caption', 
+imageRouter.post('/edit-image', 
   auth,
   upload.single('image'),
-  generateStyledCaption
+  editImage
 );
 
 // Modified reel route to use controller
@@ -227,5 +228,8 @@ imageRouter.post('/createReels',
     ]),
     createReel  // Use the controller function
 );
+
+// Route for generating images from text prompts
+imageRouter.post('/generate', auth, generateImage);
 
 module.exports = imageRouter;
